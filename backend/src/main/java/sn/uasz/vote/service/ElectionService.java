@@ -52,9 +52,9 @@ public class ElectionService {
         // Génération automatique du rapport PDF officiel lors de la clôture
         if (nextStatus == ElectionStatus.CLOTURE) {
             try {
-                byte[] pdfBytes = pdfReportService.generateElectionPdfReport(updated.getId());
+                java.io.ByteArrayInputStream pdfStream = pdfReportService.generateElectionPdfReport(updated.getId());
                 log.info("[PDF] Rapport officiel généré automatiquement à la clôture de l'élection #{} ({} octets)",
-                        updated.getId(), pdfBytes != null ? pdfBytes.length : 0);
+                        updated.getId(), pdfStream != null ? pdfStream.available() : 0);
             } catch (Exception e) {
                 // La clôture ne doit pas échouer si le PDF est indisponible — on logge sans bloquer
                 log.error("[PDF] Échec de génération du rapport pour l'élection #{}: {}", updated.getId(), e.getMessage());

@@ -53,15 +53,13 @@ class VoteControllerTest {
     @DisplayName("OTP Request — 200 OK pour un électeur authentifié éligible")
     @WithMockUser(username = "ELECT001", roles = "ELECTEUR")
     void requestOtp_shouldReturn200_whenEligible() throws Exception {
-        when(votingService.requestOtp(eq("ELECT001"), eq(1L)))
-                .thenReturn("123456");
+        org.mockito.Mockito.doNothing().when(votingService).requestOtp(eq("ELECT001"), eq(1L));
 
         mockMvc.perform(post("/api/v1/vote/request-otp")
                         .param("electionId", "1")
                         .with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").exists())
-                .andExpect(jsonPath("$.otpCode").value("123456"));
+                .andExpect(jsonPath("$.message").exists());
     }
 
     @Test
@@ -76,8 +74,8 @@ class VoteControllerTest {
     @DisplayName("OTP Request — Exception si double vote (déjà voté)")
     @WithMockUser(username = "ELECT001", roles = "ELECTEUR")
     void requestOtp_shouldThrowException_whenAlreadyVoted() {
-        when(votingService.requestOtp(eq("ELECT001"), eq(1L)))
-                .thenThrow(new IllegalStateException("Vous avez déjà participé à cette élection."));
+        org.mockito.Mockito.doThrow(new IllegalStateException("Vous avez déjà participé à cette élection."))
+                .when(votingService).requestOtp(eq("ELECT001"), eq(1L));
 
         assertThrows(Exception.class, () ->
                 mockMvc.perform(post("/api/v1/vote/request-otp")
