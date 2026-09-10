@@ -66,12 +66,14 @@ class CryptoServiceTest {
     }
 
     @Test
-    @DisplayName("Le chiffrement de deux votes identiques avec le même nonce doit produire la même sortie (déterministe côté AES-ECB)")
-    void encrypt_sameInput_sameOutput() {
+    @DisplayName("Avec AES-GCM (IV aléatoire), deux chiffrements du même texte produisent des ciphertexts différents mais tous deux déchiffrables")
+    void encrypt_sameInput_gcmRandomizedCiphertext() {
         String text = "CHOICE:101:ELECTION:1:NONCE:fixed";
         String encrypted1 = cryptoService.encrypt(text);
         String encrypted2 = cryptoService.encrypt(text);
-        assertEquals(encrypted1, encrypted2);
+        assertNotEquals(encrypted1, encrypted2, "AES-GCM doit utiliser un IV aléatoire (ciphertexts distincts)");
+        assertEquals(text, cryptoService.decrypt(encrypted1));
+        assertEquals(text, cryptoService.decrypt(encrypted2));
     }
 
     @Test

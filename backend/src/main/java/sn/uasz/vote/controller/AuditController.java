@@ -18,4 +18,13 @@ public class AuditController {
     public ResponseEntity<AuditService.AuditReportDto> getAuditReport(@PathVariable Long electionId) {
         return ResponseEntity.ok(auditService.getAuditReport(electionId));
     }
+
+    @GetMapping("/{electionId}/export-csv")
+    public ResponseEntity<String> exportAuditCsv(@PathVariable Long electionId) {
+        String csvContent = auditService.generateAuditCsv(electionId);
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=audit-election-" + electionId + ".csv")
+                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv"))
+                .body(csvContent);
+    }
 }

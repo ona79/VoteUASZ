@@ -43,6 +43,19 @@ public class AuditService {
                 .build();
     }
 
+    public String generateAuditCsv(Long electionId) {
+        AuditReportDto report = getAuditReport(electionId);
+        StringBuilder csv = new StringBuilder();
+        csv.append("Type,Timestamp,Hash_IP_ou_Ballot\n");
+        for (AuditLogEntryDto log : report.getAnonymizedLogs()) {
+            csv.append("EMARGEMENT,").append(log.getVotedAt()).append(",").append(log.getIpHash()).append("\n");
+        }
+        for (String hash : report.getBallotHashes()) {
+            csv.append("BULLETIN,N/A,").append(hash).append("\n");
+        }
+        return csv.toString();
+    }
+
     @Data
     @Builder
     public static class AuditReportDto {
