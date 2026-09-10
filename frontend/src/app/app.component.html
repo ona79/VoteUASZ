@@ -1,0 +1,9 @@
+<div class="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+  <app-navbar></app-navbar>
+
+  <!-- Contenu principal avec décalage pour la sidebar (desktop) et margin bottom pour la tab bar (mobile) -->
+  <main class="flex-1 w-full transition-all duration-300 md:ml-60 pb-16 md:pb-0">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+

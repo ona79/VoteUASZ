@@ -1,0 +1,240 @@
+openapi: 3.0.3
+info:
+  title: VoteUASZ API — Plateforme Sécurisée d'Élections Universitaires
+  description: |
+    API REST de la plateforme VoteUASZ pour l'Université Assane Seck de Ziguinchor (UASZ).
+    Gère l'authentification JWT, l'import CSV des électeurs, la machine à états des élections,
+    le dépôt de candidature avec vidéos, le vote anonyme chiffré AES-256 avec OTP et les réclamations.
+  version: 1.0.0
+  contact:
+    name: Équipe de Développement UASZ
+    email: support-vote@uasz.sn
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Serveur Local de Développement
+  - url: https://voteuasz-backend.onrender.com/api/v1
+    description: Serveur de Production Cloud (Render)
+
+paths:
+  /auth/login:
+    post:
+      summary: Authentification des utilisateurs (Super-Admin, Commission, Candidat, Électeur)
+      operationId: login
+      tags: [Authentification]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [matricule, password]
+              properties:
+                matricule:
+                  type: string
+                  example: "20230001"
+                password:
+                  type: string
+                  example: "MonMotDePasseSecurise123!"
+      responses:
+        '200':
+          description: Connexion réussie, retourne le Token JWT
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  type:
+                    type: string
+                    example: "Bearer"
+                  id:
+                    type: integer
+                  matricule:
+                    type: string
+                  nom:
+                    type: string
+                  prenom:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    type: string
+                    enum: [SUPER_ADMIN, COMMISSION_ELECTORALE, CANDIDAT, ELECTEUR]
+                  typeElecteur:
+                    type: string
+                    enum: [ETUDIANT, ENSEIGNANT, PATS]
+                  ufr:
+                    type: string
+                  filiere:
+                    type: string
+                  niveau:
+                    type: string
+
+  /admin/users/import-csv:
+    post:
+      summary: Importation en masse des comptes électeurs via fichier CSV (Super-Admin uniquement)
+      operationId: importCsv
+      tags: [Administration]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Rapport d'importation CSV
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalSuccess:
+                    type: integer
+                  totalFailed:
+                    type: integer
+                  errors:
+                    type: array
+                    items:
+                      type: string
+
+  /elections:
+    get:
+      summary: Lister toutes les élections (filtrables par statut et éligibilité)
+      operationId: getAllElections
+      tags: [Élections]
+      responses:
+        '200':
+          description: Liste des élections
+
+    post:
+      summary: Créer une nouvelle élection (Super-Admin uniquement)
+      operationId: createElection
+      tags: [Élections]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [titre, type, targetUfr]
+              properties:
+                titre:
+                  type: string
+                description:
+                  type: string
+                type:
+                  type: string
+                  enum: [DELEGUE, DUFR, VICE_RECTEUR]
+                targetUfr:
+                  type: string
+                targetFiliere:
+                  type: string
+                targetNiveau:
+                  type: string
+                dateDebut:
+                  type: string
+                  format: date-time
+                dateFin:
+                  type: string
+                  format: date-time
+
+  /elections/{id}/status:
+    patch:
+      summary: Changer le statut de la machine à états d'une élection
+      operationId: updateElectionStatus
+      tags: [Élections]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newStatus]
+              properties:
+                newStatus:
+                  type: string
+                  enum: [CONFIGURATION, CAMPAGNE, VOTE_OUVERT, DEPOUILLEMENT, PUBLICATION, CLOTURE]
+
+  /vote/request-otp:
+    post:
+      summary: Étape 1 du Vote — Demander un code OTP de 5 minutes
+      operationId: requestOtp
+      tags: [Vote Sécurisé]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [electionId]
+              properties:
+                electionId:
+                  type: integer
+
+  /vote/verify-otp:
+    post:
+      summary: Étape 2 du Vote — Vérifier l'OTP et obtenir un VoteToken à usage unique
+      operationId: verifyOtp
+      tags: [Vote Sécurisé]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [electionId, otpCode]
+              properties:
+                electionId:
+                  type: integer
+                otpCode:
+                  type: string
+                  example: "849201"
+
+  /vote/submit:
+    post:
+      summary: Étape 3 du Vote — Émettre un bulletin chiffré anonyme (AES-256)
+      operationId: submitVote
+      tags: [Vote Sécurisé]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [voteToken, electionId, candidatureId]
+              properties:
+                voteToken:
+                  type: string
+                electionId:
+                  type: integer
+                candidatureId:
+                  type: integer
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

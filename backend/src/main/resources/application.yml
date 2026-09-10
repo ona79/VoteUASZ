@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: vote-uasz-backend
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:voteuaszdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.mailtrap.io}
+    port: ${SPRING_MAIL_PORT:2525}
+    username: ${SPRING_MAIL_USERNAME:demo}
+    password: ${SPRING_MAIL_PASSWORD:demo}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: ${PORT:8080}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:VoteUaszSuperSecuredSecretKeyForSigningJwtTokens2026AssaneSeckZiguinchor}
+    expiration-ms: 86400000 # 24 heures
+  otp:
+    expiration-minutes: 5
+  crypto:
+    secret-key: ${CRYPTO_SECRET_KEY:UaszCryptoSecretKey2026SecureAES}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
