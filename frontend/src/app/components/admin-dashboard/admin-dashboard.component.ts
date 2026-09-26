@@ -63,7 +63,7 @@ import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../
           </div>
 
           <p class="text-[10px] text-slate-500 mb-3 font-medium">
-            Format CSV : <code class="bg-slate-100 px-1.5 py-0.5 rounded text-[9px] text-slate-700 font-mono">matricule, nom, prenom, email, role, ufr, filiere, niveau</code>
+            Format CSV : <code class="bg-slate-100 px-1.5 py-0.5 rounded text-[9px] text-slate-700 font-mono">matricule, nom, prenom, email, telephone, role, type_electeur, ufr, filiere, niveau</code>
           </p>
 
           <div class="space-y-2.5">
@@ -78,17 +78,24 @@ import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../
           </div>
 
           <!-- Import Result Report -->
-          <div *ngIf="importResult" class="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+          <div *ngIf="importResult" class="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs animate-fade-in-up">
             <div class="flex justify-between items-center mb-1">
-              <span class="font-black text-slate-900">Rapport :</span>
-              <span class="text-[#047857] font-black bg-emerald-50 px-2 py-0.5 rounded flex items-center space-x-1 text-[10px]">
+              <span class="font-black text-slate-900 text-[11px]">Résultat :</span>
+              <span class="text-[#047857] font-black bg-emerald-50 px-2 py-0.5 rounded text-[10px] flex items-center space-x-1">
                 <lucide-icon name="check-circle-2" class="w-3 h-3 text-[#047857]"></lucide-icon>
-                <span>{{ importResult.totalSuccess }} Succès</span>
+                <span>{{ importResult.totalSuccess }} OK</span>
               </span>
             </div>
-            <p *ngIf="importResult.totalFailed > 0" class="text-[#dc2626] text-[10px] font-bold">
-              {{ importResult.totalFailed }} échec(s)
+            <p *ngIf="importResult.totalFailed > 0" class="text-[#dc2626] font-bold text-[10px] flex items-center space-x-1 mb-1">
+              <lucide-icon name="alert-triangle" class="w-3 h-3 text-[#dc2626]"></lucide-icon>
+              <span>{{ importResult.totalFailed }} ignoré(s) / déjà existant(s)</span>
             </p>
+
+            <div *ngIf="importResult.errors && importResult.errors.length > 0" class="max-h-28 overflow-y-auto space-y-1 text-[10px] text-slate-700 bg-amber-50/90 p-2 rounded-lg border border-amber-200 hide-scrollbar mt-1">
+              <div *ngFor="let err of importResult.errors" class="font-semibold leading-relaxed">
+                ⚠️ {{ err }}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -120,6 +127,21 @@ import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../
                   <option value="DUFR">DIR. UFR</option>
                   <option value="VICE_RECTEUR">VICE-RECTEUR</option>
                 </select>
+              </div>
+            </div>
+
+            <!-- Dates du Scrutin -->
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1">Date d'Ouverture *</label>
+                <input type="datetime-local" [(ngModel)]="newElection.dateDebut" name="dateDebut" required
+                       class="uasz-input !py-1.5 !px-2 text-[11px] font-medium bg-white"/>
+              </div>
+
+              <div>
+                <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1">Date de Clôture *</label>
+                <input type="datetime-local" [(ngModel)]="newElection.dateFin" name="dateFin" required
+                       class="uasz-input !py-1.5 !px-2 text-[11px] font-medium bg-white"/>
               </div>
             </div>
 
@@ -189,13 +211,15 @@ import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../
                   <span>{{ importResult.totalSuccess }} OK</span>
                 </span>
               </div>
-              <p *ngIf="importResult.totalFailed > 0" class="text-[#dc2626] font-bold text-[10px] flex items-center space-x-1">
+              <p *ngIf="importResult.totalFailed > 0" class="text-[#dc2626] font-bold text-[10px] flex items-center space-x-1 mb-1">
                 <lucide-icon name="alert-triangle" class="w-3 h-3 text-[#dc2626]"></lucide-icon>
-                <span>{{ importResult.totalFailed }} échec(s)</span>
+                <span>{{ importResult.totalFailed }} ignoré(s) / déjà existant(s)</span>
               </p>
 
-              <div *ngIf="importResult.errors.length > 0" class="max-h-20 overflow-y-auto space-y-1 font-mono text-[9px] text-[#dc2626] bg-red-50 p-1.5 rounded-lg border border-red-100 hide-scrollbar mt-1">
-                <div *ngFor="let err of importResult.errors">{{ err }}</div>
+              <div *ngIf="importResult.errors && importResult.errors.length > 0" class="max-h-28 overflow-y-auto space-y-1 text-[10px] text-slate-700 bg-amber-50/90 p-2 rounded-lg border border-amber-200 hide-scrollbar mt-1">
+                <div *ngFor="let err of importResult.errors" class="font-semibold leading-relaxed">
+                  ⚠️ {{ err }}
+                </div>
               </div>
             </div>
           </div>
@@ -228,6 +252,21 @@ import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../
                     <option value="DUFR">DIR. UFR</option>
                     <option value="VICE_RECTEUR">VICE-RECTEUR</option>
                   </select>
+                </div>
+              </div>
+
+              <!-- Dates du Scrutin -->
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1">Date d'Ouverture *</label>
+                  <input type="datetime-local" [(ngModel)]="newElection.dateDebut" name="dateDebut" required
+                         class="uasz-input !py-1.5 !px-2 text-[11px] font-medium bg-white"/>
+                </div>
+
+                <div>
+                  <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1">Date de Clôture *</label>
+                  <input type="datetime-local" [(ngModel)]="newElection.dateFin" name="dateFin" required
+                         class="uasz-input !py-1.5 !px-2 text-[11px] font-medium bg-white"/>
                 </div>
               </div>
 
@@ -296,7 +335,7 @@ import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../
                   
                   <div class="flex-1 min-w-0 w-full">
                     <div class="flex flex-wrap items-center gap-2 mb-1.5">
-                      <h3 class="font-black text-slate-900 text-sm md:text-base leading-tight group-hover:text-[#047857] transition-colors truncate">
+                      <h3 class="font-black text-slate-900 text-sm md:text-base leading-tight group-hover:text-[#047857] transition-colors break-words">
                         {{ election.titre }}
                       </h3>
                       
@@ -308,6 +347,9 @@ import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../
                         {{ election.type }}
                       </span>
                       <span *ngIf="election.type === 'VICE_RECTEUR'" class="text-[9px] px-2 py-0.5 rounded-md bg-red-50 text-[#dc2626] border border-red-200/70 font-black uppercase tracking-wider">
+                        {{ election.type }}
+                      </span>
+                      <span *ngIf="election.type && election.type !== 'DELEGUE' && election.type !== 'DUFR' && election.type !== 'VICE_RECTEUR'" class="text-[9px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 font-black uppercase tracking-wider">
                         {{ election.type }}
                       </span>
 
@@ -359,7 +401,7 @@ import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../
                     <button *ngIf="election.statut === 'VOTE_OUVERT'" (click)="changeStatus(election.id, 'DEPOUILLEMENT')"
                             class="w-full md:w-auto px-3.5 py-1.5 rounded-xl text-[10px] font-black bg-[#1d4ed8] hover:bg-blue-700 text-white shadow-sm transition-all uppercase tracking-wider flex items-center justify-center space-x-1">
                       <span>Dépouillement</span>
-                      <lucide-icon name="bar-chart-3" class="w-3.5 h-3.5 text-white"></lucide-icon>
+                      <lucide-icon name="bar-chart-2" class="w-3.5 h-3.5 text-white"></lucide-icon>
                     </button>
 
                     <button *ngIf="election.statut === 'DEPOUILLEMENT'" (click)="changeStatus(election.id, 'PUBLICATION')"
@@ -374,8 +416,15 @@ import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../
                       <span>Clôturer</span>
                     </button>
 
+                    <button *ngIf="election.statut === 'PUBLICATION' || election.statut === 'CLOTURE'" (click)="downloadPdf(election.id)"
+                            type="button"
+                            class="w-full md:w-auto px-3.5 py-1.5 rounded-xl text-[10px] font-black bg-emerald-100/80 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 shadow-sm transition-all uppercase tracking-wider flex items-center justify-center space-x-1 cursor-pointer">
+                      <lucide-icon name="file-text" class="w-3 h-3 text-emerald-700 shrink-0"></lucide-icon>
+                      <span>PV (PDF)</span>
+                    </button>
+
                     <span *ngIf="election.statut === 'CLOTURE'" class="text-[10px] font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-                      Scrutin Terminé
+                      Terminé
                     </span>
                   </div>
 
@@ -399,7 +448,9 @@ export class AdminDashboardComponent implements OnInit {
   createLoading = false;
   newElection: Partial<Election> = {
     type: 'DELEGUE',
-    statut: 'CONFIGURATION'
+    statut: 'CONFIGURATION',
+    dateDebut: this.getDefaultDateDebut(),
+    dateFin: this.getDefaultDateFin()
   };
 
   // Mobile & Compact toggles
@@ -411,6 +462,18 @@ export class AdminDashboardComponent implements OnInit {
 
   private electionService = inject(ElectionService);
   private notificationService = inject(NotificationService);
+
+  private getDefaultDateDebut(): string {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 16);
+  }
+
+  private getDefaultDateFin(): string {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
+    return tomorrow.toISOString().slice(0, 16);
+  }
 
   toggleMobileForm(formName: 'import' | 'election'): void {
     if (this.activeMobileForm === formName) {
@@ -482,8 +545,11 @@ export class AdminDashboardComponent implements OnInit {
 
   fetchElections(): void {
     this.electionService.getElections().subscribe({
-      next: (data) => this.elections = data,
-      error: (err) => this.notificationService.showError("Erreur lors du chargement des élections.")
+      next: (data) => {
+        console.log('[Admin Dashboard] Scrutins reçus de l\'API:', data);
+        this.elections = data;
+      },
+      error: () => this.notificationService.showError("Erreur lors du chargement des élections.")
     });
   }
 
@@ -505,25 +571,54 @@ export class AdminDashboardComponent implements OnInit {
       },
       error: (err) => {
         this.csvLoading = false;
-        this.notificationService.showError("Erreur lors de l'import CSV : " + (err.error?.message || err.message));
+        const msg = err.error?.message || "Erreur lors de l'importation du fichier CSV.";
+        this.notificationService.showError(msg);
       }
     });
   }
 
   createElection(): void {
-    if (!this.newElection.titre) return;
+    if (!this.newElection.titre || !this.newElection.titre.trim()) {
+      this.notificationService.showWarning("Veuillez saisir le titre du scrutin.");
+      return;
+    }
+    if (!this.newElection.dateDebut) {
+      this.notificationService.showWarning("Veuillez spécifier la date d'ouverture du scrutin.");
+      return;
+    }
+    if (!this.newElection.dateFin) {
+      this.notificationService.showWarning("Veuillez spécifier la date de clôture du scrutin.");
+      return;
+    }
+    if (new Date(this.newElection.dateFin) <= new Date(this.newElection.dateDebut)) {
+      this.notificationService.showWarning("La date de clôture doit être strictement postérieure à la date d'ouverture.");
+      return;
+    }
+
     this.createLoading = true;
 
     this.electionService.createElection(this.newElection).subscribe({
       next: () => {
         this.createLoading = false;
         this.notificationService.showSuccess("Nouveau scrutin électoral créé avec succès.");
-        this.newElection = { type: 'DELEGUE', statut: 'CONFIGURATION' };
+        this.newElection = {
+          type: 'DELEGUE',
+          statut: 'CONFIGURATION',
+          dateDebut: this.getDefaultDateDebut(),
+          dateFin: this.getDefaultDateFin()
+        };
+        this.activeMobileForm = 'none';
         this.fetchElections();
       },
       error: (err) => {
         this.createLoading = false;
-        this.notificationService.showError("Erreur de création : " + (err.error?.message || err.message));
+        console.error("[Create Election Error]", err);
+        const serverMsg = err.error?.message;
+        const isTechnicalError = !serverMsg || serverMsg.includes("null value") || serverMsg.includes("violates") || serverMsg.includes("SQL");
+        const userMsg = isTechnicalError
+          ? "Erreur de création : Veuillez vérifier l'ensemble des champs obligatoires du formulaire."
+          : "Erreur de création : " + serverMsg;
+        this.notificationService.showError(userMsg);
       }
     });
   }
@@ -531,10 +626,17 @@ export class AdminDashboardComponent implements OnInit {
   changeStatus(electionId: number, newStatus: ElectionStatus): void {
     this.electionService.updateElectionStatus(electionId, newStatus).subscribe({
       next: () => {
-        this.notificationService.showSuccess(`Statut du scrutin #${electionId} mis à jour : ${newStatus}`);
+        this.notificationService.showSuccess(`Statut du scrutin ${electionId} mis à jour : ${newStatus}`);
         this.fetchElections();
       },
-      error: (err) => this.notificationService.showError("Transition d'état impossible : " + (err.error?.message || err.message))
+      error: (err) => {
+        const msg = err.error?.message || "Transition d'état impossible pour ce scrutin.";
+        this.notificationService.showError(msg);
+      }
     });
+  }
+
+  downloadPdf(electionId: number): void {
+    this.electionService.downloadPdfReport(electionId);
   }
 }

@@ -80,7 +80,7 @@ class CryptoServiceTest {
     @DisplayName("Le ballot ne doit contenir aucune information identifiable de l'électeur")
     void encryptedPayload_containsNoUserInfo() {
         String userMatricule = "20230001";
-        String userId = "42";
+        String userId = "USER_SECRET_ID_98765";
         // Le payload chiffré ne doit pas contenir le matricule ou l'ID de l'électeur
         String votePayload = "CHOICE:101:ELECTION:1:NONCE:random-abc";
         String encrypted = cryptoService.encrypt(votePayload);

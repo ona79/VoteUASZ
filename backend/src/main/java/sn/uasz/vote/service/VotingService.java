@@ -29,7 +29,6 @@ public class VotingService {
     private final VoteTokenRepository voteTokenRepository;
     private final BallotRepository ballotRepository;
     private final VoterAuditLogRepository voterAuditLogRepository;
-    private final ElectionService electionService;
     private final EligibilityService eligibilityService;
     private final CryptoService cryptoService;
     private final PasswordEncoder passwordEncoder;
@@ -58,6 +57,21 @@ public class VotingService {
             throw new IllegalStateException("Vous avez déjà voté pour cette élection !");
         }
 
+        // 1. Quota par heure : maximum 5 OTPs par heure pour le même (user, election)
+        LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
+        long otpsLastHour = voteOTPRepository.countByUserIdAndElectionIdAndCreatedAtAfter(user.getId(), electionId, oneHourAgo);
+        if (otpsLastHour >= 5) {
+            throw new IllegalStateException("Quota dépassé : vous ne pouvez pas demander plus de 5 codes OTP par heure. Veuillez réessayer plus tard ou contacter la Commission Électorale.");
+        }
+
+        // 2. Cooldown : au moins 60 secondes entre deux demandes d'OTP
+        Optional<VoteOTP> lastOtpOpt = voteOTPRepository.findTopByUserIdAndElectionIdOrderByCreatedAtDesc(user.getId(), electionId);
+        if (lastOtpOpt.isPresent() && lastOtpOpt.get().getCreatedAt() != null) {
+            if (lastOtpOpt.get().getCreatedAt().isAfter(LocalDateTime.now().minusSeconds(60))) {
+                throw new IllegalStateException("Veuillez patienter 60 secondes avant de solliciter un nouveau code OTP.");
+            }
+        }
+
         String rawOtp = String.format("%06d", random.nextInt(1000000));
         String codeHash = passwordEncoder.encode(rawOtp);
 
@@ -76,19 +90,34 @@ public class VotingService {
         otpEmailService.sendOtpByEmail(user.getEmail(), rawOtp, election.getTitre());
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = {IllegalArgumentException.class, IllegalStateException.class})
     public String verifyOtpAndGenerateToken(String userMatricule, Long electionId, String rawOtp) {
         User user = userRepository.findByMatricule(userMatricule)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé"));
 
-        VoteOTP otp = voteOTPRepository.findTopByUserIdAndElectionIdAndUsedFalseOrderByCreatedAtDesc(user.getId(), electionId)
+        VoteOTP otp = voteOTPRepository.findTopByUserIdAndElectionIdOrderByCreatedAtDesc(user.getId(), electionId)
                 .orElseThrow(() -> new IllegalArgumentException("Aucun code OTP actif trouvé. Veuillez en solliciter un nouveau."));
+
+        if (otp.getAttemptsCount() >= 5) {
+            throw new IllegalStateException("Trop de tentatives incorrectes. Veuillez demander un nouveau code.");
+        }
+
+        if (otp.isUsed()) {
+            throw new IllegalArgumentException("Aucun code OTP actif trouvé. Veuillez en solliciter un nouveau.");
+        }
 
         if (otp.isExpired()) {
             throw new IllegalStateException("Le code OTP a expiré (durée de validité 5 minutes dépassée).");
         }
 
         if (!passwordEncoder.matches(rawOtp, otp.getCodeHash())) {
+            otp.setAttemptsCount(otp.getAttemptsCount() + 1);
+            if (otp.getAttemptsCount() >= 5) {
+                otp.setUsed(true);
+                voteOTPRepository.save(otp);
+                throw new IllegalStateException("Trop de tentatives incorrectes. Veuillez demander un nouveau code.");
+            }
+            voteOTPRepository.save(otp);
             throw new IllegalArgumentException("Code OTP incorrect.");
         }
 
@@ -188,10 +217,14 @@ public class VotingService {
             long count = ballotRepository.countByElectionIdAndCandidatureId(electionId, c.getId());
             double percentage = totalVotes > 0 ? ((double) count / totalVotes) * 100.0 : 0.0;
 
+            String candidatName = c.getCandidat() != null 
+                    ? (c.getCandidat().getPrenom() + " " + c.getCandidat().getNom()) 
+                    : c.getNomListe();
+
             candidateResults.add(LiveResultsDto.CandidatureResultDto.builder()
                     .candidatureId(c.getId())
-                    .nomCandidat(c.getCandidat().getPrenom() + " " + c.getCandidat().getNom())
-                    .nomListe(c.getNomListe())
+                    .nomCandidat(candidatName)
+                    .nomListe(candidatName)
                     .voteCount(count)
                     .percentage(Math.round(percentage * 100.0) / 100.0)
                     .build());

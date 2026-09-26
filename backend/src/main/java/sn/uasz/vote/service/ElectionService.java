@@ -1,11 +1,12 @@
 package sn.uasz.vote.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import sn.uasz.vote.dto.ElectionDto;
+import sn.uasz.vote.dto.LiveResultsDto;
 import sn.uasz.vote.entity.Election;
 import sn.uasz.vote.entity.User;
 import sn.uasz.vote.enums.ElectionStatus;
@@ -15,13 +16,26 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class ElectionService {
 
     private final ElectionRepository electionRepository;
     private final ElectionStateMachine stateMachine;
-    private final @Lazy PdfReportService pdfReportService;
+    private final PdfReportService pdfReportService;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final VotingService votingService;
+
+    public ElectionService(ElectionRepository electionRepository,
+                           ElectionStateMachine stateMachine,
+                           PdfReportService pdfReportService,
+                           SimpMessagingTemplate messagingTemplate,
+                           @Lazy VotingService votingService) {
+        this.electionRepository = electionRepository;
+        this.stateMachine = stateMachine;
+        this.pdfReportService = pdfReportService;
+        this.messagingTemplate = messagingTemplate;
+        this.votingService = votingService;
+    }
 
     @Transactional
     public ElectionDto createElection(ElectionDto dto) {
@@ -50,12 +64,27 @@ public class ElectionService {
         election.setStatut(nextStatus);
         Election updated = electionRepository.save(election);
 
+        // Diffusion WebSocket en direct lors du changement de statut (dépouillement, publication, etc.)
+        try {
+            LiveResultsDto liveResults = votingService.getLiveResults(updated.getId());
+            messagingTemplate.convertAndSend("/topic/results/" + updated.getId(), liveResults);
+        } catch (Exception e) {
+            log.warn("[STOMP] Échec de la diffusion WebSocket des résultats pour l'élection #{}: {}", updated.getId(), e.getMessage());
+        }
+
         // Génération automatique du rapport PDF officiel lors de la clôture
         if (nextStatus == ElectionStatus.CLOTURE) {
             try {
                 java.io.ByteArrayInputStream pdfStream = pdfReportService.generateElectionPdfReport(updated.getId());
-                log.info("[PDF] Rapport officiel généré automatiquement à la clôture de l'élection #{} ({} octets)",
-                        updated.getId(), pdfStream != null ? pdfStream.available() : 0);
+                if (pdfStream != null) {
+                    byte[] pdfBytes = pdfStream.readAllBytes();
+                    java.nio.file.Path reportsDir = java.nio.file.Paths.get("reports");
+                    java.nio.file.Files.createDirectories(reportsDir);
+                    java.nio.file.Path pdfFilePath = reportsDir.resolve("pv_election_" + updated.getId() + ".pdf");
+                    java.nio.file.Files.write(pdfFilePath, pdfBytes);
+                    log.info("[PDF] Procès-Verbal officiel généré et sauvegardé avec succès pour l'élection #{} : {} ({} octets)",
+                            updated.getId(), pdfFilePath.toAbsolutePath(), pdfBytes.length);
+                }
             } catch (Exception e) {
                 // La clôture ne doit pas échouer si le PDF est indisponible — on logge sans bloquer
                 log.error("[PDF] Échec de génération du rapport pour l'élection #{}: {}", updated.getId(), e.getMessage());

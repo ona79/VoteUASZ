@@ -80,7 +80,8 @@ export interface CampaignPost {
 export interface LiveResult {
   candidatureId: number;
   nomListe: string;
-  candidatNom: string;
+  nomCandidat?: string;
+  candidatNom?: string;
   voteCount: number;
   percentage: number;
 }
@@ -89,8 +90,9 @@ export interface LiveResultsDto {
   electionId: number;
   electionTitre: string;
   totalVotes: number;
-  results: LiveResult[];
-  lastUpdated: string;
+  candidateResults?: LiveResult[];
+  results?: LiveResult[];
+  lastUpdated?: string;
 }
 
 export interface UserImportResult {

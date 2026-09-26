@@ -95,7 +95,7 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Login — 403/401 avec mot de passe incorrect")
+    @DisplayName("Login — 401 Unauthorized avec mot de passe incorrect")
     void login_shouldReturn401_withBadCredentials() throws Exception {
         LoginRequest request = new LoginRequest("20230001", "MauvaisMotDePasse");
 
@@ -106,7 +106,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                         .with(csrf()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -170,16 +170,15 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Forgot Password — Exception si identifiant introuvable")
-    void forgotPassword_shouldThrowException_whenUserNotFound() {
+    @DisplayName("Forgot Password — 400 Bad Request si identifiant introuvable")
+    void forgotPassword_shouldThrowException_whenUserNotFound() throws Exception {
         when(userRepository.findByMatricule("INCONNU")).thenReturn(Optional.empty());
         when(userRepository.findByEmail("INCONNU")).thenReturn(Optional.empty());
 
-        assertThrows(Exception.class, () ->
-                mockMvc.perform(post("/api/v1/auth/forgot-password")
+        mockMvc.perform(post("/api/v1/auth/forgot-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("identifier", "INCONNU")))
                         .with(csrf()))
-        );
+                .andExpect(status().isBadRequest());
     }
 }

@@ -84,12 +84,12 @@ class ComplaintControllerTest {
     }
 
     @Test
-    @DisplayName("Soumettre Réclamation — 403 Forbidden sans authentification")
+    @DisplayName("Soumettre Réclamation — 401 Unauthorized sans authentification")
     void submitComplaint_shouldReturn403_whenNotAuthenticated() throws Exception {
         mockMvc.perform(post("/api/v1/complaints")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     // ───────────────────────────────────────────────────────────────────────
@@ -116,10 +116,10 @@ class ComplaintControllerTest {
     }
 
     @Test
-    @DisplayName("Mes Réclamations — 403 Forbidden sans authentification")
+    @DisplayName("Mes Réclamations — 401 Unauthorized sans authentification")
     void getMyComplaints_shouldReturn403_whenNotAuthenticated() throws Exception {
         mockMvc.perform(get("/api/v1/complaints/my-complaints"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     // ───────────────────────────────────────────────────────────────────────

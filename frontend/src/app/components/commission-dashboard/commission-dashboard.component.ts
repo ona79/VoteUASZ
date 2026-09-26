@@ -84,9 +84,11 @@ import { Candidature, Election } from '../../models/vote.models';
                 </span>
               </div>
               
-              <h3 class="font-black text-slate-900 text-sm md:text-base mb-1 leading-snug group-hover:text-[#047857] transition-colors truncate">{{ c.nomListe }}</h3>
-              <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                {{ c.candidatPrenom ? (c.candidatPrenom + ' ' + (c.candidatNom || '')) : (c.candidatNomComplet || 'Candidat') }} <span *ngIf="c.candidatMatricule" class="text-[#1d4ed8]">#{{ c.candidatMatricule }}</span>
+              <h3 class="font-black text-slate-900 text-sm md:text-base mb-1 leading-snug group-hover:text-[#047857] transition-colors truncate">
+                {{ c.candidatNomComplet || (c.candidatPrenom ? (c.candidatPrenom + ' ' + (c.candidatNom || '')) : (c.nomListe || 'Candidat')) }}
+              </h3>
+              <p *ngIf="c.candidatMatricule" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                Matricule : <span class="text-[#1d4ed8]">{{ c.candidatMatricule }}</span>
               </p>
             </div>
 

@@ -55,6 +55,13 @@ public class User {
     @Builder.Default
     private boolean active = true;
 
+    @Column(name = "failed_login_attempts", nullable = false, columnDefinition = "integer default 0")
+    @Builder.Default
+    private int failedLoginAttempts = 0;
+
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

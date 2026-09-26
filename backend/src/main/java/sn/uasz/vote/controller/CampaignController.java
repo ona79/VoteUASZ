@@ -11,24 +11,30 @@ import sn.uasz.vote.service.CampaignService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/campaigns")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class CampaignController {
 
     private final CampaignService campaignService;
 
-    @PostMapping
+    @PostMapping({"/campaigns", "/candidatures/{candidatureId}/posts", "/candidacies/{candidatureId}/posts"})
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'CANDIDAT')")
-    public ResponseEntity<CampaignPostDto> createPost(@RequestBody CampaignPostDto dto, Authentication auth) {
+    public ResponseEntity<CampaignPostDto> createPost(
+            @PathVariable(required = false) Long candidatureId,
+            @RequestBody CampaignPostDto dto,
+            Authentication auth) {
+        if (candidatureId != null) {
+            dto.setCandidatureId(candidatureId);
+        }
         return ResponseEntity.ok(campaignService.createCampaignPost(dto, auth.getName()));
     }
 
-    @GetMapping("/candidature/{candidatureId}")
+    @GetMapping({"/campaigns/candidature/{candidatureId}", "/candidatures/{candidatureId}/posts", "/candidacies/{candidatureId}/posts"})
     public ResponseEntity<List<CampaignPostDto>> getPostsByCandidature(@PathVariable Long candidatureId) {
         return ResponseEntity.ok(campaignService.getPostsByCandidature(candidatureId));
     }
 
-    @GetMapping("/election/{electionId}")
+    @GetMapping({"/campaigns/election/{electionId}", "/elections/{electionId}/posts"})
     public ResponseEntity<List<CampaignPostDto>> getPostsByElection(@PathVariable Long electionId) {
         return ResponseEntity.ok(campaignService.getPostsByElection(electionId));
     }

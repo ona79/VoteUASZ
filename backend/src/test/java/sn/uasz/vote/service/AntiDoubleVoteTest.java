@@ -102,7 +102,7 @@ class AntiDoubleVoteTest {
         expiredOtp.setUsed(false);
 
         when(userRepository.findByMatricule("20230001")).thenReturn(Optional.of(testUser));
-        when(voteOTPRepository.findTopByUserIdAndElectionIdAndUsedFalseOrderByCreatedAtDesc(1L, 42L))
+        when(voteOTPRepository.findTopByUserIdAndElectionIdOrderByCreatedAtDesc(1L, 42L))
                 .thenReturn(Optional.of(expiredOtp));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->

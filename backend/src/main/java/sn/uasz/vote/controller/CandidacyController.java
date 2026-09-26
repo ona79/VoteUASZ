@@ -23,6 +23,12 @@ public class CandidacyController {
         return ResponseEntity.ok(candidacyService.submitCandidacy(dto, auth.getName()));
     }
 
+    @GetMapping("/my-candidacies")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'CANDIDAT')")
+    public ResponseEntity<List<CandidatureDto>> getMyCandidacies(Authentication auth) {
+        return ResponseEntity.ok(candidacyService.getCandidaciesByCandidat(auth.getName()));
+    }
+
     @GetMapping("/election/{electionId}")
     public ResponseEntity<List<CandidatureDto>> getCandidacies(@PathVariable Long electionId) {
         return ResponseEntity.ok(candidacyService.getCandidaciesByElection(electionId));

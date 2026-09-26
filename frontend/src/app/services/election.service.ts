@@ -36,21 +36,33 @@ export class ElectionService {
   }
 
   getLiveResults(electionId: number): Observable<LiveResultsDto> {
-    return this.http.get<LiveResultsDto>(`${this.apiUrl}/elections/${electionId}/results`);
+    return this.http.get<LiveResultsDto>(`${this.apiUrl}/results/${electionId}`);
+  }
+
+  downloadPdfReport(electionId: number): void {
+    window.open(`${this.apiUrl}/results/${electionId}/export-pdf`, '_blank');
   }
 
   // Espace Candidat
-  submitCandidature(electionId: number, nomListe: string, photoUrl: string, programmePdf: string, cvUrl: string): Observable<Candidature> {
+  getMyCandidatures(): Observable<Candidature[]> {
+    return this.http.get<Candidature[]>(`${this.apiUrl}/candidacies/my-candidacies`);
+  }
+
+  submitCandidature(electionId: number, photoUrl?: string, programmePdf?: string, cvUrl?: string): Observable<Candidature> {
     return this.http.post<Candidature>(`${this.apiUrl}/candidacies`, {
-      electionId, nomListe, photoUrl, programmePdf, cvUrl
+      electionId, photoUrl, programmePdf, cvUrl
     });
   }
 
   // Campagne électorale avec support vidéo (YouTube/Vimeo)
   addCampaignPost(candidatureId: number, titre: string, contenu: string, afficheUrl?: string, videoEmbedUrl?: string): Observable<CampaignPost> {
     return this.http.post<CampaignPost>(`${this.apiUrl}/candidatures/${candidatureId}/posts`, {
-      titre, contenu, afficheUrl, videoEmbedUrl
+      candidatureId, titre, contenu, afficheUrl, videoEmbedUrl
     });
+  }
+
+  getCampaignPostsByElection(electionId: number): Observable<CampaignPost[]> {
+    return this.http.get<CampaignPost[]>(`${this.apiUrl}/campaigns/election/${electionId}`);
   }
 
   // Commission Électorale : Validation / Rejet

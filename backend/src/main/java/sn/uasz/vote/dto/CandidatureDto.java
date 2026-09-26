@@ -24,4 +24,5 @@ public class CandidatureDto {
     private String cvUrl;
     private CandidacyStatus statut;
     private String motifRejet;
+    private java.util.List<CampaignPostDto> posts;
 }

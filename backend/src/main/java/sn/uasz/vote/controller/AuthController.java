@@ -27,29 +27,64 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getMatriculeOrEmail(), request.getPassword())
-        );
+        String identifier = request.getMatriculeOrEmail();
+        User user = userRepository.findByMatricule(identifier)
+                .orElseGet(() -> userRepository.findByEmail(identifier).orElse(null));
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = tokenProvider.generateToken(authentication);
+        if (user != null && user.getLockedUntil() != null && java.time.LocalDateTime.now().isBefore(user.getLockedUntil())) {
+            throw new org.springframework.security.authentication.LockedException(
+                    "Votre compte est temporairement verrouillé suite à plusieurs tentatives d'authentification échouées."
+            );
+        }
 
-        User user = userRepository.findByMatricule(request.getMatriculeOrEmail())
-                .orElseGet(() -> userRepository.findByEmail(request.getMatriculeOrEmail()).orElseThrow());
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(identifier, request.getPassword())
+            );
 
-        return ResponseEntity.ok(LoginResponse.builder()
-                .token(jwt)
-                .id(user.getId())
-                .matricule(user.getMatricule())
-                .nom(user.getNom())
-                .prenom(user.getPrenom())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .typeElecteur(user.getTypeElecteur())
-                .ufr(user.getUfr())
-                .filiere(user.getFiliere())
-                .niveau(user.getNiveau())
-                .build());
+            if (user != null && (user.getFailedLoginAttempts() > 0 || user.getLockedUntil() != null)) {
+                user.setFailedLoginAttempts(0);
+                user.setLockedUntil(null);
+                userRepository.save(user);
+            }
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String jwt = tokenProvider.generateToken(authentication);
+
+            if (user == null) {
+                user = userRepository.findByMatricule(identifier)
+                        .orElseGet(() -> userRepository.findByEmail(identifier).orElseThrow());
+            }
+
+            return ResponseEntity.ok(LoginResponse.builder()
+                    .token(jwt)
+                    .id(user.getId())
+                    .matricule(user.getMatricule())
+                    .nom(user.getNom())
+                    .prenom(user.getPrenom())
+                    .email(user.getEmail())
+                    .role(user.getRole())
+                    .typeElecteur(user.getTypeElecteur())
+                    .ufr(user.getUfr())
+                    .filiere(user.getFiliere())
+                    .niveau(user.getNiveau())
+                    .build());
+
+        } catch (org.springframework.security.authentication.BadCredentialsException ex) {
+            if (user != null) {
+                int newAttempts = user.getFailedLoginAttempts() + 1;
+                user.setFailedLoginAttempts(newAttempts);
+                if (newAttempts >= 5) {
+                    user.setLockedUntil(java.time.LocalDateTime.now().plusMinutes(5));
+                    userRepository.save(user);
+                    throw new org.springframework.security.authentication.LockedException(
+                            "Votre compte est temporairement verrouillé suite à plusieurs tentatives d'authentification échouées."
+                    );
+                }
+                userRepository.save(user);
+            }
+            throw ex;
+        }
     }
 
     @PostMapping("/forgot-password")

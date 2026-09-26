@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-voteuasz_db}
       POSTGRES_USER: ${POSTGRES_USER:-uasz_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in .env file}
     ports:
       - "5540:5432"
     volumes:
@@ -39,11 +39,18 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-voteuasz_db}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-uasz_admin}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in .env file}
       SPRING_MAIL_HOST: mailhog
       SPRING_MAIL_PORT: 1025
-      JWT_SECRET: ${JWT_SECRET}
-      CRYPTO_SECRET: ${CRYPTO_SECRET}
+      SPRING_MAIL_USERNAME: noreply@voteuasz.sn
+      APP_MAIL_FROM: noreply@voteuasz.sn
+      SPRING_MAIL_SMTP_AUTH: "false"
+      SPRING_MAIL_STARTTLS_ENABLE: "false"
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required in .env file}
+      CRYPTO_SECRET_KEY: ${CRYPTO_SECRET:?CRYPTO_SECRET is required in .env file}
+      CRYPTO_SECRET: ${CRYPTO_SECRET:?CRYPTO_SECRET is required in .env file}
+      DEFAULT_ELECTEUR_PASSWORD: ${DEFAULT_ELECTEUR_PASSWORD:-CHANGEME_REQUIRED_ELECTEUR_PASSWORD_2026}
+      DEFAULT_CANDIDAT_PASSWORD: ${DEFAULT_CANDIDAT_PASSWORD:-CHANGEME_REQUIRED_CANDIDAT_PASSWORD_2026}
     depends_on:
       postgres:
         condition: service_healthy

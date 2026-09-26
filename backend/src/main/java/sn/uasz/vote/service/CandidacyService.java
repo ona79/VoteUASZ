@@ -9,6 +9,8 @@ import sn.uasz.vote.entity.Election;
 import sn.uasz.vote.entity.User;
 import sn.uasz.vote.enums.CandidacyStatus;
 import sn.uasz.vote.enums.ElectionStatus;
+import sn.uasz.vote.dto.CampaignPostDto;
+import sn.uasz.vote.repository.CampaignPostRepository;
 import sn.uasz.vote.repository.CandidatureRepository;
 import sn.uasz.vote.repository.ElectionRepository;
 import sn.uasz.vote.repository.UserRepository;
@@ -23,6 +25,7 @@ public class CandidacyService {
     private final CandidatureRepository candidatureRepository;
     private final ElectionRepository electionRepository;
     private final UserRepository userRepository;
+    private final CampaignPostRepository campaignPostRepository;
 
     @Transactional
     public CandidatureDto submitCandidacy(CandidatureDto dto, String userMatricule) {
@@ -41,10 +44,12 @@ public class CandidacyService {
                     throw new IllegalStateException("Vous avez déjà soumis une candidature pour cette élection.");
                 });
 
+        String userFullName = (candidat.getPrenom() + " " + candidat.getNom()).trim();
+
         Candidature candidature = Candidature.builder()
                 .election(election)
                 .candidat(candidat)
-                .nomListe(dto.getNomListe())
+                .nomListe(userFullName)
                 .photoUrl(dto.getPhotoUrl())
                 .programmePdf(dto.getProgrammePdf())
                 .cvUrl(dto.getCvUrl())
@@ -79,21 +84,47 @@ public class CandidacyService {
                 .stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
+    public List<CandidatureDto> getCandidaciesByCandidat(String userMatricule) {
+        return candidatureRepository.findByCandidatMatricule(userMatricule)
+                .stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
     public CandidatureDto mapToDto(Candidature c) {
+        List<CampaignPostDto> posts = null;
+        if (c.getId() != null) {
+            posts = campaignPostRepository.findByCandidatureId(c.getId())
+                    .stream()
+                    .map(p -> CampaignPostDto.builder()
+                            .id(p.getId())
+                            .candidatureId(p.getCandidature().getId())
+                            .titre(p.getTitre())
+                            .contenu(p.getContenu())
+                            .afficheUrl(p.getAfficheUrl())
+                            .videoEmbedUrl(p.getVideoEmbedUrl())
+                            .createdAt(p.getCreatedAt())
+                            .build())
+                    .collect(Collectors.toList());
+        }
+
+        String realNomComplet = c.getCandidat() != null
+                ? (c.getCandidat().getPrenom() + " " + c.getCandidat().getNom()).trim()
+                : (c.getNomListe() != null ? c.getNomListe() : "Candidat");
+
         return CandidatureDto.builder()
                 .id(c.getId())
                 .electionId(c.getElection().getId())
                 .candidatId(c.getCandidat() != null ? c.getCandidat().getId() : null)
-                .candidatNomComplet(c.getCandidat() != null ? (c.getCandidat().getPrenom() + " " + c.getCandidat().getNom()) : null)
+                .candidatNomComplet(realNomComplet)
                 .candidatNom(c.getCandidat() != null ? c.getCandidat().getNom() : null)
                 .candidatPrenom(c.getCandidat() != null ? c.getCandidat().getPrenom() : null)
                 .candidatMatricule(c.getCandidat() != null ? c.getCandidat().getMatricule() : null)
-                .nomListe(c.getNomListe())
+                .nomListe(realNomComplet)
                 .photoUrl(c.getPhotoUrl())
                 .programmePdf(c.getProgrammePdf())
                 .cvUrl(c.getCvUrl())
                 .statut(c.getStatut())
                 .motifRejet(c.getMotifRejet())
+                .posts(posts)
                 .build();
     }
 }

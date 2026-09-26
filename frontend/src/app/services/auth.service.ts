@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, tap, catchError, throwError } from 'rxjs';
 import { AuthResponse, Role } from '../models/vote.models';
 
 @Injectable({
@@ -18,9 +18,40 @@ export class AuthService {
         localStorage.setItem('voteuasz_token', response.token);
         localStorage.setItem('voteuasz_user', JSON.stringify(response));
         this.currentUser.set(response);
+      }),
+      catchError((err: HttpErrorResponse) => {
+        // Erreur réseau ou serveur arrêté
+        if (err.status === 0) {
+          return throwError(() => ({
+            error: { message: 'Impossible de joindre le serveur. Vérifiez votre connexion ou réessayez dans un instant.' }
+          }));
+        }
+        // Mauvais identifiants ou compte désactivé (401)
+        if (err.status === 401) {
+          return throwError(() => ({
+            error: { message: err.error?.message || 'Matricule ou mot de passe incorrect.' }
+          }));
+        }
+        // Accès refusé (403)
+        if (err.status === 403) {
+          return throwError(() => ({
+            error: { message: 'Accès refusé pour ce compte.' }
+          }));
+        }
+        // Erreur serveur (500)
+        if (err.status >= 500) {
+          return throwError(() => ({
+            error: { message: 'Le serveur rencontre un problème. Veuillez réessayer dans quelques instants.' }
+          }));
+        }
+        // Autre erreur
+        return throwError(() => ({
+          error: { message: err.error?.message || 'Une erreur inattendue est survenue.' }
+        }));
       })
     );
   }
+
 
   logout(): void {
     localStorage.removeItem('voteuasz_token');

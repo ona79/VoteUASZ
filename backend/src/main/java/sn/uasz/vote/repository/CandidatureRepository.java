@@ -13,4 +13,5 @@ public interface CandidatureRepository extends JpaRepository<Candidature, Long> 
     List<Candidature> findByElectionId(Long electionId);
     List<Candidature> findByElectionIdAndStatut(Long electionId, CandidacyStatus statut);
     Optional<Candidature> findByElectionIdAndCandidatId(Long electionId, Long userId);
+    List<Candidature> findByCandidatMatricule(String matricule);
 }

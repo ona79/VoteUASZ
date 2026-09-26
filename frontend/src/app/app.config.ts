@@ -10,6 +10,7 @@ import {
   Megaphone,
   LogOut,
   User,
+  Users,
   Lock,
   Upload,
   Loader2,
@@ -27,7 +28,10 @@ import {
   Key,
   Send,
   ArrowLeft,
-  Info
+  Info,
+  BarChart2,
+  Play,
+  ChevronDown
 } from 'lucide-angular';
 import { routes } from './app.routes';
 import { jwtInterceptor } from './interceptors/jwt.interceptor';
@@ -46,6 +50,7 @@ export const appConfig: ApplicationConfig = {
         Megaphone,
         LogOut,
         User,
+        Users,
         Lock,
         Upload,
         Loader2,
@@ -63,7 +68,10 @@ export const appConfig: ApplicationConfig = {
         Key,
         Send,
         ArrowLeft,
-        Info
+        Info,
+        BarChart2,
+        Play,
+        ChevronDown
     })),
     provideServiceWorker('ngsw-worker.js', {
         enabled: !isDevMode(),

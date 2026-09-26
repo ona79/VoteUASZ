@@ -63,25 +63,24 @@ class VoteControllerTest {
     }
 
     @Test
-    @DisplayName("OTP Request — 403 Forbidden sans authentification")
+    @DisplayName("OTP Request — 401 Unauthorized sans authentification")
     void requestOtp_shouldReturn403_whenNotAuthenticated() throws Exception {
         mockMvc.perform(post("/api/v1/vote/request-otp")
                         .param("electionId", "1"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("OTP Request — Exception si double vote (déjà voté)")
+    @DisplayName("OTP Request — 409 Conflict si double vote (déjà voté)")
     @WithMockUser(username = "ELECT001", roles = "ELECTEUR")
-    void requestOtp_shouldThrowException_whenAlreadyVoted() {
+    void requestOtp_shouldThrowException_whenAlreadyVoted() throws Exception {
         org.mockito.Mockito.doThrow(new IllegalStateException("Vous avez déjà participé à cette élection."))
                 .when(votingService).requestOtp(eq("ELECT001"), eq(1L));
 
-        assertThrows(Exception.class, () ->
-                mockMvc.perform(post("/api/v1/vote/request-otp")
+        mockMvc.perform(post("/api/v1/vote/request-otp")
                         .param("electionId", "1")
                         .with(csrf()))
-        );
+                .andExpect(status().isConflict());
     }
 
     // ───────────────────────────────────────────────────────────────────────
@@ -104,12 +103,12 @@ class VoteControllerTest {
     }
 
     @Test
-    @DisplayName("OTP Verify — 403 Forbidden sans authentification")
+    @DisplayName("OTP Verify — 401 Unauthorized sans authentification")
     void verifyOtp_shouldReturn403_whenNotAuthenticated() throws Exception {
         mockMvc.perform(post("/api/v1/vote/verify-otp")
                         .param("electionId", "1")
                         .param("otpCode", "000000"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     // ───────────────────────────────────────────────────────────────────────
@@ -157,11 +156,11 @@ class VoteControllerTest {
     }
 
     @Test
-    @DisplayName("Submit Vote — 403 Forbidden sans authentification")
+    @DisplayName("Submit Vote — 401 Unauthorized sans authentification")
     void submitVote_shouldReturn403_whenNotAuthenticated() throws Exception {
         mockMvc.perform(post("/api/v1/vote/submit")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 }

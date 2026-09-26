@@ -13,7 +13,7 @@ export class WebSocketService {
 
   connect(electionId: number): void {
     // Correction du mismatch: /ws correspond à l'endpoint déclaré dans WebSocketConfig.java
-    const wsUrl = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/websocket';
+    const wsUrl = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws';
 
     this.stompClient = new Client({
       brokerURL: wsUrl,

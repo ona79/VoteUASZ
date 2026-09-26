@@ -38,6 +38,10 @@ public class CampaignService {
             throw new IllegalStateException("La période de campagne officielle n'est pas ouverte.");
         }
 
+        if (!campaignPostRepository.findByCandidatureId(candidature.getId()).isEmpty()) {
+            throw new IllegalStateException("Vous avez déjà effectué votre publication officielle de campagne pour ce scrutin.");
+        }
+
         CampaignPost post = CampaignPost.builder()
                 .candidature(candidature)
                 .titre(dto.getTitre())

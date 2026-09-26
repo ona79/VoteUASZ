@@ -37,11 +37,11 @@ export class VoteService {
   constructor(private http: HttpClient) {}
 
   requestOtp(electionId: number): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/request-otp`, { electionId });
+    return this.http.post<{ message: string }>(`${this.apiUrl}/request-otp?electionId=${electionId}`, { electionId });
   }
 
   verifyOtp(electionId: number, otpCode: string): Observable<OtpVerifyResponse> {
-    return this.http.post<OtpVerifyResponse>(`${this.apiUrl}/verify-otp`, { electionId, otpCode });
+    return this.http.post<OtpVerifyResponse>(`${this.apiUrl}/verify-otp?electionId=${electionId}&otpCode=${encodeURIComponent(otpCode)}`, { electionId, otpCode });
   }
 
   submitVote(voteToken: string, electionId: number, candidatureId: number): Observable<VoteSubmitResponse> {

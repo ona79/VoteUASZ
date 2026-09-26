@@ -167,7 +167,7 @@ VoteUASZ/
 Lance l'application complète en une seule commande :
 
 ```bash
-git clone <url-du-depot>
+git clone https://github.com/ona79/VoteUASZ.git
 cd VoteUASZ
 cp .env.example .env              # Crée votre fichier d'environnement local
 docker-compose up --build
@@ -286,6 +286,7 @@ if (raison === null) return; // Annulation propre (Échap, clic extérieur, Annu
 | **Contrôle d'accès routes** | `authGuard` (authentification) + `roleGuard(roles[])` (autorisation) |
 | **Requêtes HTTP** | `AuthInterceptor` — injection automatique du JWT Bearer token |
 | **Validité OTP** | 5 minutes, usage unique, invalidé après consommation |
+| **Mot de passe électeurs CSV** | Configurable via `DEFAULT_ELECTEUR_PASSWORD` (variable d'environnement) — jamais écrit en clair dans le code |
 
 ---
 
@@ -335,6 +336,7 @@ npm test
 | `SPRING_DATASOURCE_PASSWORD` | Mot de passe DB sécurisé |
 | `JWT_SECRET` | Clé aléatoire min. 256 bits |
 | `CRYPTO_SECRET` | Clé AES min. 32 caractères |
+| `DEFAULT_ELECTEUR_PASSWORD` | Mot de passe attribué aux électeurs importés via CSV (à définir en production) |
 | `SPRING_MAIL_HOST` | Hôte SMTP de production |
 | `SPRING_MAIL_PORT` | `587` |
 | `SPRING_MAIL_USERNAME` | Adresse email d'envoi |
