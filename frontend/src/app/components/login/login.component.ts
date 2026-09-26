@@ -47,10 +47,17 @@ import { NotificationService } from '../../services/notification.service';
             <p class="text-xs text-slate-500 font-medium">Accès réservé aux électeurs et administrateurs pré-provisionnés</p>
           </div>
 
-          <!-- Alert Error (Rouge UASZ) -->
-          <div *ngIf="errorMessage" class="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-[#dc2626] text-xs font-semibold flex items-center space-x-2.5 shadow-sm animate-fade-in-up">
-            <lucide-icon name="alert-triangle" class="w-4 h-4 text-[#dc2626] shrink-0"></lucide-icon>
-            <span>{{ errorMessage }}</span>
+          <!-- Alert Error (Format doux et fermable) -->
+          <div *ngIf="errorMessage"
+               [class]="isOfflineError ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-red-50 border-red-200 text-[#dc2626]'"
+               class="mb-5 p-3 rounded-xl border text-xs font-semibold flex items-center justify-between shadow-sm animate-fade-in-up">
+            <div class="flex items-center space-x-2.5">
+              <lucide-icon [name]="isOfflineError ? 'info' : 'alert-triangle'" [class]="isOfflineError ? 'text-amber-600' : 'text-[#dc2626]'" class="w-4 h-4 shrink-0"></lucide-icon>
+              <span>{{ errorMessage }}</span>
+            </div>
+            <button (click)="errorMessage = ''" type="button" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition ml-2 shrink-0">
+              <lucide-icon name="x" class="w-3.5 h-3.5"></lucide-icon>
+            </button>
           </div>
 
           <!-- Login Form -->
@@ -112,6 +119,7 @@ export class LoginComponent implements OnInit {
   password = '';
   loading = false;
   errorMessage = '';
+  isOfflineError = false;
 
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -128,12 +136,14 @@ export class LoginComponent implements OnInit {
 
   onSubmit(): void {
     if (!this.matricule || !this.password) {
+      this.isOfflineError = false;
       this.errorMessage = 'Veuillez saisir votre matricule et mot de passe.';
       return;
     }
 
     this.loading = true;
     this.errorMessage = '';
+    this.isOfflineError = false;
 
     this.authService.login(this.matricule, this.password).subscribe({
       next: (user) => {
@@ -145,6 +155,7 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
+        this.isOfflineError = !!err.isOffline;
         this.errorMessage = err.error?.message || 'Identifiants invalides. Les comptes sont pré-provisionnés par l\'administration.';
       }
     });

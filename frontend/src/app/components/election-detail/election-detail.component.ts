@@ -535,7 +535,23 @@ export class ElectionDetailComponent implements OnInit, OnDestroy {
 
   downloadPdfReport(): void {
     if (this.electionId) {
-      this.electionService.downloadPdfReport(this.electionId);
+      this.electionService.exportPdfReport(this.electionId).subscribe({
+        next: (blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `proces-verbal-election-${this.electionId}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          this.notificationService.showSuccess('Procès-verbal PDF téléchargé avec succès.');
+        },
+        error: (err) => {
+          console.error('Erreur export PDF:', err);
+          this.notificationService.showError('Échec du téléchargement du procès-verbal PDF.');
+        }
+      });
     }
   }
 

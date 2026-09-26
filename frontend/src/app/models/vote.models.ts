@@ -108,3 +108,16 @@ export interface VoterAuditLog {
   electionTitre: string;
   ipHash?: string;
 }
+
+export interface AuditLogEntryDto {
+  votedAt: string;
+  ipHash?: string;
+}
+
+export interface AuditReportDto {
+  electionId: number;
+  totalVotersRegistered: number;
+  totalBallotsRecorded: number;
+  anonymizedLogs: AuditLogEntryDto[];
+  ballotHashes: string[];
+}

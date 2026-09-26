@@ -13,9 +13,11 @@ export interface ComplaintResponse {
   id: number;
   electionId: number;
   electionTitre?: string;
+  auteurNomComplet?: string;
   sujet: string;
   description: string;
   statut: ComplaintStatus;
+  reponseCommission?: string;
   createdAt: string;
 }
 
@@ -29,6 +31,16 @@ export class ComplaintService {
   }
 
   getMyComplaints(): Observable<ComplaintResponse[]> {
-    return this.http.get<ComplaintResponse[]>(`${this.apiUrl}/mine`);
+    return this.http.get<ComplaintResponse[]>(`${this.apiUrl}/my-complaints`);
+  }
+
+  getComplaintsByElection(electionId: number): Observable<ComplaintResponse[]> {
+    return this.http.get<ComplaintResponse[]>(`${this.apiUrl}/election/${electionId}`);
+  }
+
+  resolveComplaint(id: number, status: ComplaintStatus, reponseCommission: string): Observable<ComplaintResponse> {
+    return this.http.put<ComplaintResponse>(`${this.apiUrl}/${id}/resolve`, null, {
+      params: { status, reponseCommission }
+    });
   }
 }

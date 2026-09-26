@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Candidature, CampaignPost, Election, ElectionStatus, LiveResultsDto, UserImportResult } from '../models/vote.models';
+import { Candidature, CampaignPost, Election, ElectionStatus, LiveResultsDto, UserImportResult, AuditReportDto } from '../models/vote.models';
 
 @Injectable({
   providedIn: 'root'
@@ -39,8 +39,21 @@ export class ElectionService {
     return this.http.get<LiveResultsDto>(`${this.apiUrl}/results/${electionId}`);
   }
 
-  downloadPdfReport(electionId: number): void {
-    window.open(`${this.apiUrl}/results/${electionId}/export-pdf`, '_blank');
+  exportPdfReport(electionId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/results/${electionId}/export-pdf`, {
+      responseType: 'blob'
+    });
+  }
+
+  // Audit Cryptographique (UC5)
+  getAuditReport(electionId: number): Observable<AuditReportDto> {
+    return this.http.get<AuditReportDto>(`${this.apiUrl}/audit/${electionId}`);
+  }
+
+  exportAuditCsv(electionId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/audit/${electionId}/export-csv`, {
+      responseType: 'blob'
+    });
   }
 
   // Espace Candidat

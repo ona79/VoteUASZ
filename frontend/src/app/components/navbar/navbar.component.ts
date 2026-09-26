@@ -58,6 +58,14 @@ import { AuthService } from '../../services/auth.service';
             <lucide-icon name="megaphone" class="w-4 h-4 shrink-0"></lucide-icon>
             <span>Espace Candidat</span>
           </a>
+
+          <a *ngIf="authService.hasRole('ELECTEUR') || authService.hasRole('CANDIDAT')"
+             routerLink="/reclamations"
+             routerLinkActive="bg-emerald-50 text-[#047857] font-bold border-emerald-200"
+             class="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-[#047857] hover:bg-emerald-50/60 transition border border-transparent">
+            <lucide-icon name="alert-triangle" class="w-4 h-4 shrink-0 text-amber-600"></lucide-icon>
+            <span>Réclamations</span>
+          </a>
         </ng-container>
       </div>
 
@@ -108,6 +116,12 @@ import { AuthService } from '../../services/auth.service';
            class="flex flex-col items-center justify-center p-1.5 text-slate-500 hover:text-[#047857] transition">
           <lucide-icon name="megaphone" class="w-5 h-5 mb-0.5"></lucide-icon>
           <span class="text-[9px] font-bold">Candidat</span>
+        </a>
+
+        <a *ngIf="authService.hasRole('ELECTEUR') || authService.hasRole('CANDIDAT')" routerLink="/reclamations" routerLinkActive="text-[#047857]"
+           class="flex flex-col items-center justify-center p-1.5 text-slate-500 hover:text-[#047857] transition">
+          <lucide-icon name="alert-triangle" class="w-5 h-5 mb-0.5 text-amber-600"></lucide-icon>
+          <span class="text-[9px] font-bold">Recours</span>
         </a>
 
         <ng-container *ngIf="authService.isLoggedIn(); else loginBtnMob">

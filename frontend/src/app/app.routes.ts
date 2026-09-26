@@ -34,11 +34,11 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard(['CANDIDAT'])]
   },
 
-  // Réclamations électorales (tous les utilisateurs authentifiés)
+  // Réclamations électorales (dépôt et suivi pour Électeurs et Candidats)
   {
     path: 'reclamations',
     component: ComplaintComponent,
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard(['ELECTEUR', 'CANDIDAT'])]
   },
 
   { path: '', redirectTo: 'elections', pathMatch: 'full' },

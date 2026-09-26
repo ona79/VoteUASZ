@@ -20,10 +20,11 @@ export class AuthService {
         this.currentUser.set(response);
       }),
       catchError((err: HttpErrorResponse) => {
-        // Erreur réseau ou serveur arrêté
+        // Erreur réseau ou serveur arrêté (offline / backend non démarré)
         if (err.status === 0) {
           return throwError(() => ({
-            error: { message: 'Impossible de joindre le serveur. Vérifiez votre connexion ou réessayez dans un instant.' }
+            isOffline: true,
+            error: { message: 'Le serveur backend est actuellement indisponible (hors ligne ou en maintenance).' }
           }));
         }
         // Mauvais identifiants ou compte désactivé (401)

@@ -6,6 +6,7 @@ import { ElectionService } from '../../services/election.service';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { Election } from '../../models/vote.models';
+import { ElectionFilterComponent } from '../shared/election-filter/election-filter.component';
 
 @Component({
   selector: 'app-election-list',
@@ -13,7 +14,8 @@ import { Election } from '../../models/vote.models';
   imports: [
     CommonModule,
     RouterLink,
-    LucideAngularModule
+    LucideAngularModule,
+    ElectionFilterComponent
   ],
   template: `
     <!-- Hero Header Mobile & Desktop -->
@@ -32,8 +34,8 @@ import { Election } from '../../models/vote.models';
           </p>
         </div>
 
-        <div *ngIf="authService.currentUser() as user; else loginHeaderBtn" class="bg-black/15 backdrop-blur-md p-3.5 rounded-xl border border-white/20 text-white min-w-[210px] shadow-lg w-full md:w-auto">
-          <div class="flex items-center space-x-3">
+        <div *ngIf="authService.currentUser() as user; else loginHeaderBtn" class="bg-black/15 backdrop-blur-md p-3.5 rounded-xl border border-white/20 text-white min-w-[210px] shadow-lg w-full md:w-auto flex flex-col justify-between">
+          <div class="flex items-center space-x-3 mb-2">
             <div class="w-10 h-10 rounded-xl bg-white text-[#047857] flex items-center justify-center text-base font-black shadow-md shrink-0">
               {{ user.prenom.charAt(0) }}{{ user.nom.charAt(0) }}
             </div>
@@ -42,6 +44,26 @@ import { Election } from '../../models/vote.models';
               <p class="text-[10px] text-emerald-100/90 font-medium">UFR : {{ user.ufr || 'Toutes' }} | {{ user.filiere || 'N/A' }} {{ user.niveau || '' }}</p>
             </div>
           </div>
+          <a *ngIf="authService.hasRole('ELECTEUR') || authService.hasRole('CANDIDAT')"
+             routerLink="/reclamations"
+             class="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[11px] font-bold border border-amber-400/30 transition">
+            <lucide-icon name="alert-triangle" class="w-3.5 h-3.5 text-amber-300"></lucide-icon>
+            <span>Déposer une réclamation</span>
+          </a>
+
+          <a *ngIf="authService.hasRole('COMMISSION_ELECTORALE')"
+             routerLink="/commission"
+             class="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-100 text-[11px] font-bold border border-emerald-400/30 transition">
+            <lucide-icon name="landmark" class="w-3.5 h-3.5 text-emerald-300"></lucide-icon>
+            <span>Espace Commission</span>
+          </a>
+
+          <a *ngIf="authService.hasRole('SUPER_ADMIN')"
+             routerLink="/admin"
+             class="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-100 text-[11px] font-bold border border-blue-400/30 transition">
+            <lucide-icon name="shield" class="w-3.5 h-3.5 text-blue-300"></lucide-icon>
+            <span>Espace Super-Admin</span>
+          </a>
         </div>
 
         <ng-template #loginHeaderBtn>
@@ -54,16 +76,24 @@ import { Election } from '../../models/vote.models';
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-      <!-- Filters & Title -->
-      <div class="flex items-center justify-between mb-5">
+      <!-- Titre avec compteur total -->
+      <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-black text-slate-900 flex items-center space-x-2 tracking-tight">
           <lucide-icon name="vote" class="w-5 h-5 text-[#047857] shrink-0"></lucide-icon>
           <span>Élections</span>
           <span class="text-xs px-2.5 py-0.5 rounded-lg bg-[#047857]/10 text-[#047857] font-black border border-[#047857]/20">
-            {{ elections.length }}
+            {{ filteredElections.length }}<span *ngIf="filteredElections.length !== elections.length" class="opacity-60"> / {{ elections.length }}</span>
           </span>
         </h2>
       </div>
+
+      <!-- Barre de filtres -->
+      <app-election-filter
+        [elections]="elections"
+        [ufrList]="ufrList"
+        [showUfrFilter]="true"
+        (filtered)="filteredElections = $event"
+      ></app-election-filter>
 
       <!-- Loading State -->
       <div *ngIf="loading" class="py-12 text-center text-slate-500 animate-pulse">
@@ -73,7 +103,7 @@ import { Election } from '../../models/vote.models';
 
       <!-- Elections Grid -->
       <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div *ngFor="let election of elections"
+        <div *ngFor="let election of filteredElections"
              class="bg-white p-4 md:p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between relative shadow-sm hover:shadow-md transition-all group overflow-hidden">
 
           <!-- Hover side border indicator -->
@@ -135,12 +165,23 @@ import { Election } from '../../models/vote.models';
 
         </div>
       </div>
+      <!-- État vide après filtrage -->
+      <div *ngIf="!loading && filteredElections.length === 0 && elections.length > 0"
+           class="py-16 text-center">
+        <div class="inline-flex flex-col items-center gap-3">
+          <span class="text-4xl">🗳️</span>
+          <p class="text-sm font-bold text-slate-600">Aucune élection ne correspond à ces filtres.</p>
+          <p class="text-xs text-slate-400">Modifiez ou réinitialisez vos critères de recherche.</p>
+        </div>
+      </div>
 
     </div>
   `
 })
 export class ElectionListComponent implements OnInit {
   elections: Election[] = [];
+  filteredElections: Election[] = [];
+  ufrList: string[] = [];
   loading = true;
 
   private electionService = inject(ElectionService);
@@ -156,11 +197,13 @@ export class ElectionListComponent implements OnInit {
     this.electionService.getElections().subscribe({
       next: (data) => {
         this.elections = data;
+        this.filteredElections = data;
+        this.ufrList = [...new Set(data.map(e => e.targetUfr).filter((u): u is string => !!u))];
         this.loading = false;
       },
-      error: (err) => {
+      error: () => {
         this.loading = false;
-        this.notificationService.showError("Impossible de charger les scrutins électoraux.");
+        this.notificationService.showError('Impossible de charger les scrutins électoraux.');
       }
     });
   }

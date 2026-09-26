@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { ElectionService } from '../../services/election.service';
 import { NotificationService } from '../../services/notification.service';
-import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../models/vote.models';
+import { Candidature, Election, ElectionStatus, TypeElection, UserImportResult, AuditReportDto } from '../../models/vote.models';
+import { ElectionFilterComponent } from '../shared/election-filter/election-filter.component';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -12,7 +13,8 @@ import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../
   imports: [
     CommonModule,
     FormsModule,
-    LucideAngularModule
+    LucideAngularModule,
+    ElectionFilterComponent
   ],
   template: `
     <!-- Header Mobile & Desktop -->
@@ -320,12 +322,24 @@ import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../
                 <h2 class="text-base md:text-lg font-black text-slate-900 tracking-tight">Machines à États Électorales</h2>
               </div>
               <span class="text-xs font-black text-[#047857] bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200/60">
-                {{ elections.length }} Scrutin(s)
+                {{ filteredElections.length }}<span *ngIf="filteredElections.length !== elections.length" class="opacity-60"> / {{ elections.length }}</span> Scrutin(s)
               </span>
             </div>
 
+            <!-- Barre de filtres Admin -->
+            <app-election-filter
+              [elections]="elections"
+              [ufrList]="ufrList"
+              [showUfrFilter]="true"
+              (filtered)="filteredElections = $event"
+            ></app-election-filter>
+
             <div class="space-y-3">
-              <div *ngFor="let election of elections"
+              <!-- État vide -->
+              <div *ngIf="filteredElections.length === 0 && elections.length > 0" class="py-10 text-center">
+                <p class="text-sm font-bold text-slate-500">🗳️ Aucun scrutin ne correspond à ces filtres.</p>
+              </div>
+              <div *ngFor="let election of filteredElections"
                    class="bg-white p-3.5 md:p-4 rounded-xl border border-slate-200/90 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
                    
                 <!-- Left side border indicator (appears on hover) -->
@@ -384,46 +398,63 @@ import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../
                     </div>
                   </div>
 
-                  <!-- State Transition Action Button -->
-                  <div class="shrink-0 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 flex justify-end">
-                    <button *ngIf="election.statut === 'CONFIGURATION'" (click)="changeStatus(election.id, 'CAMPAGNE')"
-                            class="w-full md:w-auto px-3.5 py-1.5 rounded-xl text-[10px] font-black bg-[#1d4ed8] hover:bg-blue-700 text-white shadow-sm transition-all uppercase tracking-wider flex items-center justify-center space-x-1">
-                      <span>Passer en Campagne</span>
-                      <span>→</span>
+                  <!-- Ultra-compact Action Buttons Toolbar -->
+                  <div class="shrink-0 w-full md:w-auto pt-2.5 md:pt-0 border-t md:border-t-0 border-slate-100 flex flex-wrap items-center justify-end gap-1.5">
+                    <button (click)="openCandidaciesModal(election)"
+                            type="button"
+                            title="Consulter et valider les dossiers de candidature"
+                            class="px-2.5 py-1 rounded-lg text-[9px] font-black bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80 shadow-2xs transition flex items-center space-x-1 cursor-pointer">
+                      <lucide-icon name="file-text" class="w-3 h-3 text-[#047857] shrink-0"></lucide-icon>
+                      <span>Dossiers</span>
                     </button>
 
-                    <button *ngIf="election.statut === 'CAMPAGNE'" (click)="changeStatus(election.id, 'VOTE_OUVERT')"
-                            class="w-full md:w-auto px-3.5 py-1.5 rounded-xl text-[10px] font-black bg-[#047857] hover:bg-emerald-700 text-white shadow-sm transition-all uppercase tracking-wider flex items-center justify-center space-x-1">
-                      <span>Ouvrir le Vote</span>
-                      <lucide-icon name="vote" class="w-3.5 h-3.5 text-white"></lucide-icon>
-                    </button>
-
-                    <button *ngIf="election.statut === 'VOTE_OUVERT'" (click)="changeStatus(election.id, 'DEPOUILLEMENT')"
-                            class="w-full md:w-auto px-3.5 py-1.5 rounded-xl text-[10px] font-black bg-[#1d4ed8] hover:bg-blue-700 text-white shadow-sm transition-all uppercase tracking-wider flex items-center justify-center space-x-1">
-                      <span>Dépouillement</span>
-                      <lucide-icon name="bar-chart-2" class="w-3.5 h-3.5 text-white"></lucide-icon>
-                    </button>
-
-                    <button *ngIf="election.statut === 'DEPOUILLEMENT'" (click)="changeStatus(election.id, 'PUBLICATION')"
-                            class="w-full md:w-auto px-3.5 py-1.5 rounded-xl text-[10px] font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all uppercase tracking-wider flex items-center justify-center space-x-1">
-                      <span>Publier Résult.</span>
-                      <lucide-icon name="megaphone" class="w-3.5 h-3.5 text-white"></lucide-icon>
-                    </button>
-
-                    <button *ngIf="election.statut === 'PUBLICATION'" (click)="changeStatus(election.id, 'CLOTURE')"
-                            class="w-full md:w-auto px-3.5 py-1.5 rounded-xl text-[10px] font-black bg-red-50 text-[#dc2626] hover:bg-red-100 border border-red-200 shadow-sm transition-all uppercase tracking-wider flex items-center justify-center space-x-1">
-                      <lucide-icon name="lock" class="w-3 h-3 text-[#dc2626] shrink-0"></lucide-icon>
-                      <span>Clôturer</span>
+                    <button (click)="openAuditModal(election)"
+                            type="button"
+                            title="Consulter le journal d'audit cryptographique SHA-256"
+                            class="px-2.5 py-1 rounded-lg text-[9px] font-black bg-emerald-50 hover:bg-emerald-100 text-[#047857] border border-emerald-200/80 shadow-2xs transition flex items-center space-x-1 cursor-pointer">
+                      <lucide-icon name="shield" class="w-3 h-3 text-[#047857] shrink-0"></lucide-icon>
+                      <span>Audit</span>
                     </button>
 
                     <button *ngIf="election.statut === 'PUBLICATION' || election.statut === 'CLOTURE'" (click)="downloadPdf(election.id)"
                             type="button"
-                            class="w-full md:w-auto px-3.5 py-1.5 rounded-xl text-[10px] font-black bg-emerald-100/80 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 shadow-sm transition-all uppercase tracking-wider flex items-center justify-center space-x-1 cursor-pointer">
+                            title="Télécharger le Procès-Verbal Officiel PDF"
+                            class="px-2.5 py-1 rounded-lg text-[9px] font-black bg-emerald-100/90 hover:bg-emerald-200 text-emerald-800 border border-emerald-300/80 shadow-2xs transition flex items-center space-x-1 cursor-pointer">
                       <lucide-icon name="file-text" class="w-3 h-3 text-emerald-700 shrink-0"></lucide-icon>
-                      <span>PV (PDF)</span>
+                      <span>PV PDF</span>
                     </button>
 
-                    <span *ngIf="election.statut === 'CLOTURE'" class="text-[10px] font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                    <!-- Machine à états (Transition principale) -->
+                    <button *ngIf="election.statut === 'CONFIGURATION'" (click)="changeStatus(election.id, 'CAMPAGNE')"
+                            class="px-2.5 py-1 rounded-lg text-[9px] font-black bg-[#1d4ed8] hover:bg-blue-700 text-white shadow-2xs transition uppercase tracking-wider flex items-center space-x-1">
+                      <span>Campagne →</span>
+                    </button>
+
+                    <button *ngIf="election.statut === 'CAMPAGNE'" (click)="changeStatus(election.id, 'VOTE_OUVERT')"
+                            class="px-2.5 py-1 rounded-lg text-[9px] font-black bg-[#047857] hover:bg-emerald-700 text-white shadow-2xs transition uppercase tracking-wider flex items-center space-x-1">
+                      <lucide-icon name="vote" class="w-3 h-3 text-white shrink-0"></lucide-icon>
+                      <span>Ouvrir Vote</span>
+                    </button>
+
+                    <button *ngIf="election.statut === 'VOTE_OUVERT'" (click)="changeStatus(election.id, 'DEPOUILLEMENT')"
+                            class="px-2.5 py-1 rounded-lg text-[9px] font-black bg-[#1d4ed8] hover:bg-blue-700 text-white shadow-2xs transition uppercase tracking-wider flex items-center space-x-1">
+                      <lucide-icon name="bar-chart-2" class="w-3 h-3 text-white shrink-0"></lucide-icon>
+                      <span>Dépouiller</span>
+                    </button>
+
+                    <button *ngIf="election.statut === 'DEPOUILLEMENT'" (click)="changeStatus(election.id, 'PUBLICATION')"
+                            class="px-2.5 py-1 rounded-lg text-[9px] font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs transition uppercase tracking-wider flex items-center space-x-1">
+                      <lucide-icon name="megaphone" class="w-3 h-3 text-white shrink-0"></lucide-icon>
+                      <span>Publier</span>
+                    </button>
+
+                    <button *ngIf="election.statut === 'PUBLICATION'" (click)="changeStatus(election.id, 'CLOTURE')"
+                            class="px-2.5 py-1 rounded-lg text-[9px] font-black bg-red-50 text-[#dc2626] hover:bg-red-100 border border-red-200 shadow-2xs transition uppercase tracking-wider flex items-center space-x-1">
+                      <lucide-icon name="lock" class="w-3 h-3 text-[#dc2626] shrink-0"></lucide-icon>
+                      <span>Clôturer</span>
+                    </button>
+
+                    <span *ngIf="election.statut === 'CLOTURE'" class="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
                       Terminé
                     </span>
                   </div>
@@ -434,13 +465,162 @@ import { Election, ElectionStatus, TypeElection, UserImportResult } from '../../
           </div>
 
         </div>
-
       </div>
-    </div>
+
+      <!-- MODAL VALIDATION CANDIDATURES (SUPER-ADMIN) -->
+      <div *ngIf="selectedElectionForCandidacies" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl border border-slate-200 animate-fade-in-up max-h-[85vh] overflow-y-auto">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+            <div>
+              <span class="text-[10px] font-black text-[#047857] uppercase tracking-widest bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                Validation des Dossiers
+              </span>
+              <h3 class="text-lg font-black text-slate-900 mt-1">Candidatures — {{ selectedElectionForCandidacies.titre }}</h3>
+            </div>
+            <button (click)="closeCandidaciesModal()" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition">
+              <lucide-icon name="x" class="w-4 h-4"></lucide-icon>
+            </button>
+          </div>
+
+          <div *ngIf="loadingCandidatures" class="py-12 text-center">
+            <lucide-icon name="loader-2" class="w-6 h-6 animate-spin text-[#047857] mx-auto"></lucide-icon>
+            <p class="text-xs text-slate-500 mt-2 font-medium">Chargement des dossiers...</p>
+          </div>
+
+          <div *ngIf="!loadingCandidatures && candidatures.length === 0" class="py-12 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+            <lucide-icon name="inbox" class="w-8 h-8 text-slate-400 mx-auto mb-2"></lucide-icon>
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Aucune candidature soumise pour ce scrutin.</p>
+          </div>
+
+          <div *ngIf="!loadingCandidatures && candidatures.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div *ngFor="let c of candidatures" class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
+              <div>
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+                    <img *ngIf="c.photoUrl" [src]="c.photoUrl" class="w-full h-full object-cover"/>
+                    <lucide-icon *ngIf="!c.photoUrl" name="user" class="w-5 h-5 text-slate-400"></lucide-icon>
+                  </div>
+                  <span [class]="getCandidacyStatusClass(c.statut)" class="text-[9px] px-2.5 py-0.5 rounded-md font-black uppercase tracking-wider border">
+                    {{ c.statut }}
+                  </span>
+                </div>
+                <h4 class="font-black text-slate-900 text-sm mb-0.5">
+                  {{ c.candidatNomComplet || (c.candidatPrenom ? (c.candidatPrenom + ' ' + (c.candidatNom || '')) : (c.nomListe || 'Candidat')) }}
+                </h4>
+                <p *ngIf="c.candidatMatricule" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2">
+                  Matricule : <span class="text-[#1d4ed8]">{{ c.candidatMatricule }}</span>
+                </p>
+
+                <!-- Documents -->
+                <div class="flex flex-wrap gap-2 my-2">
+                  <a *ngIf="c.programmePdf" [href]="c.programmePdf" target="_blank"
+                     class="px-2.5 py-1 rounded-lg text-[10px] font-black bg-[#1d4ed8]/10 text-[#1d4ed8] hover:bg-[#1d4ed8]/20 transition flex items-center space-x-1">
+                    <lucide-icon name="file-text" class="w-3 h-3"></lucide-icon>
+                    <span>Programme PDF</span>
+                  </a>
+                  <a *ngIf="c.cvUrl" [href]="c.cvUrl" target="_blank"
+                     class="px-2.5 py-1 rounded-lg text-[10px] font-black bg-[#1d4ed8]/10 text-[#1d4ed8] hover:bg-[#1d4ed8]/20 transition flex items-center space-x-1">
+                    <lucide-icon name="file-check" class="w-3 h-3"></lucide-icon>
+                    <span>CV PDF</span>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Actions Validation (Super-Admin) -->
+              <div class="flex space-x-2 pt-3 border-t border-slate-200 mt-3">
+                <button *ngIf="c.statut === 'PENDING'" (click)="updateCandidacyStatus(c.id, 'APPROVED')"
+                        class="flex-1 py-1.5 rounded-xl bg-[#047857] hover:bg-[#065f46] text-white text-[10px] font-black shadow-sm transition flex items-center justify-center space-x-1">
+                  <lucide-icon name="check" class="w-3 h-3"></lucide-icon>
+                  <span>Valider</span>
+                </button>
+                <button *ngIf="c.statut === 'PENDING'" (click)="rejectCandidacy(c.id)"
+                        class="flex-1 py-1.5 rounded-xl bg-[#dc2626] hover:bg-red-700 text-white text-[10px] font-black shadow-sm transition flex items-center justify-center space-x-1">
+                  <lucide-icon name="x" class="w-3 h-3"></lucide-icon>
+                  <span>Rejeter</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+            <button (click)="closeCandidaciesModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL AUDIT CRYPTOGRAPHIQUE (SUPER-ADMIN - UC5) -->
+      <div *ngIf="selectedElectionForAudit" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 animate-fade-in-up max-h-[85vh] overflow-y-auto">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+            <div>
+              <span class="text-[10px] font-black text-[#047857] uppercase tracking-widest bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                Audit Cryptographique Registre Immuable
+              </span>
+              <h3 class="text-lg font-black text-slate-900 mt-1">Journal de Preuve — {{ selectedElectionForAudit.titre }}</h3>
+            </div>
+            <button (click)="closeAuditModal()" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition">
+              <lucide-icon name="x" class="w-4 h-4"></lucide-icon>
+            </button>
+          </div>
+
+          <div *ngIf="loadingAudit" class="py-12 text-center">
+            <lucide-icon name="loader-2" class="w-6 h-6 animate-spin text-[#047857] mx-auto"></lucide-icon>
+            <p class="text-xs text-slate-500 mt-2 font-medium">Chargement des preuves d'audit cryptographique...</p>
+          </div>
+
+          <div *ngIf="!loadingAudit && auditReport" class="space-y-6">
+            <!-- Statistiques d'intégrité -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="bg-emerald-50/50 p-4 rounded-xl border border-emerald-200">
+                <p class="text-[10px] font-black text-[#047857] uppercase tracking-wider mb-1">Émargements Anonymisés</p>
+                <p class="text-2xl font-black text-slate-900">{{ auditReport.totalVotersRegistered }}</p>
+                <p class="text-[10px] text-slate-500 mt-1">Empreintes d'horodatage enregistrées</p>
+              </div>
+              <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-200">
+                <p class="text-[10px] font-black text-[#1d4ed8] uppercase tracking-wider mb-1">Bulletins Chiffrés (AES-256)</p>
+                <p class="text-2xl font-black text-slate-900">{{ auditReport.totalBallotsRecorded }}</p>
+                <p class="text-[10px] text-slate-500 mt-1">Empreintes SHA-256 dans le journal</p>
+              </div>
+            </div>
+
+            <!-- Preuves d'Empreinte SHA-256 -->
+            <div>
+              <h4 class="text-xs font-black text-slate-800 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>Journal d'Empreintes Chiffrées SHA-256</span>
+                <button (click)="exportAuditCsv(selectedElectionForAudit.id)" class="px-3 py-1 rounded-lg bg-[#047857] hover:bg-[#065f46] text-white text-[10px] font-bold transition flex items-center space-x-1">
+                  <lucide-icon name="upload" class="w-3 h-3"></lucide-icon>
+                  <span>Exporter Audit (CSV)</span>
+                </button>
+              </h4>
+
+              <div class="bg-slate-900 rounded-xl p-4 text-emerald-400 font-mono text-[11px] max-h-48 overflow-y-auto space-y-1 shadow-inner border border-slate-800">
+                <div *ngFor="let hash of auditReport.ballotHashes" class="flex items-center space-x-2">
+                  <span class="text-slate-500 select-none">▶</span>
+                  <span class="break-all">{{ hash }}</span>
+                </div>
+                <div *ngIf="auditReport.ballotHashes.length === 0" class="text-slate-500 italic text-center py-4">
+                  Aucun bulletin enregistré pour ce scrutin.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
+            <span class="text-[10px] font-bold text-slate-400">Intégrité garantie par signature asymétrique RSA / SHA-256</span>
+            <button (click)="closeAuditModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
   `
 })
 export class AdminDashboardComponent implements OnInit {
   elections: Election[] = [];
+  filteredElections: Election[] = [];
+  ufrList: string[] = [];
   selectedFile: File | null = null;
   csvLoading = false;
   importResult: UserImportResult | null = null;
@@ -546,10 +726,11 @@ export class AdminDashboardComponent implements OnInit {
   fetchElections(): void {
     this.electionService.getElections().subscribe({
       next: (data) => {
-        console.log('[Admin Dashboard] Scrutins reçus de l\'API:', data);
         this.elections = data;
+        this.filteredElections = data;
+        this.ufrList = [...new Set(data.map(e => e.targetUfr).filter((u): u is string => !!u))];
       },
-      error: () => this.notificationService.showError("Erreur lors du chargement des élections.")
+      error: () => this.notificationService.showError('Erreur lors du chargement des élections.')
     });
   }
 
@@ -636,7 +817,125 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  // Modal Validation Candidatures (Super-Admin)
+  selectedElectionForCandidacies: Election | null = null;
+  candidatures: Candidature[] = [];
+  loadingCandidatures = false;
+
+  openCandidaciesModal(election: Election): void {
+    this.selectedElectionForCandidacies = election;
+    this.loadingCandidatures = true;
+    this.electionService.getCandidatures(election.id).subscribe({
+      next: (data) => {
+        this.candidatures = data;
+        this.loadingCandidatures = false;
+      },
+      error: () => {
+        this.loadingCandidatures = false;
+        this.notificationService.showError("Impossible de charger les candidatures pour ce scrutin.");
+      }
+    });
+  }
+
+  closeCandidaciesModal(): void {
+    this.selectedElectionForCandidacies = null;
+    this.candidatures = [];
+  }
+
+  updateCandidacyStatus(candidatureId: number, status: 'APPROVED' | 'REJECTED', motif?: string): void {
+    this.electionService.updateCandidacyStatus(candidatureId, status, motif).subscribe({
+      next: () => {
+        this.notificationService.showSuccess(status === 'APPROVED' ? 'Candidature validée avec succès.' : 'Candidature rejetée.');
+        if (this.selectedElectionForCandidacies) {
+          this.electionService.getCandidatures(this.selectedElectionForCandidacies.id).subscribe(d => this.candidatures = d);
+        }
+      },
+      error: (err) => this.notificationService.showError(err.error?.message || err.message || "Erreur lors de la mise à jour.")
+    });
+  }
+
+  async rejectCandidacy(candidatureId: number): Promise<void> {
+    const motif = await this.notificationService.prompt(
+      "Motif de Rejet",
+      "Saisissez le motif de rejet du dossier de candidature :",
+      "ex: Pièces justificatives incomplètes ou non conformes",
+      "Confirmer le Rejet"
+    );
+    if (motif && motif.trim()) {
+      this.updateCandidacyStatus(candidatureId, 'REJECTED', motif.trim());
+    }
+  }
+
+  getCandidacyStatusClass(status: string): string {
+    switch (status) {
+      case 'APPROVED': return 'bg-emerald-50 text-[#047857] border-[#047857]/20';
+      case 'REJECTED': return 'bg-red-50 text-[#dc2626] border-[#dc2626]/20';
+      default: return 'bg-amber-50 text-amber-600 border-amber-200';
+    }
+  }
+
+  // Modal Audit Cryptographique (Super-Admin - UC5)
+  selectedElectionForAudit: Election | null = null;
+  auditReport: AuditReportDto | null = null;
+  loadingAudit = false;
+
+  openAuditModal(election: Election): void {
+    this.selectedElectionForAudit = election;
+    this.loadingAudit = true;
+    this.electionService.getAuditReport(election.id).subscribe({
+      next: (data) => {
+        this.auditReport = data;
+        this.loadingAudit = false;
+      },
+      error: () => {
+        this.loadingAudit = false;
+        this.notificationService.showError("Impossible de charger les preuves d'audit pour ce scrutin.");
+      }
+    });
+  }
+
+  closeAuditModal(): void {
+    this.selectedElectionForAudit = null;
+    this.auditReport = null;
+  }
+
+  exportAuditCsv(electionId: number): void {
+    this.electionService.exportAuditCsv(electionId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `audit-election-${electionId}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        this.notificationService.showSuccess('Journal d\'audit CSV téléchargé avec succès.');
+      },
+      error: (err) => {
+        console.error('Erreur export audit CSV:', err);
+        this.notificationService.showError('Échec du téléchargement du journal d\'audit CSV.');
+      }
+    });
+  }
+
   downloadPdf(electionId: number): void {
-    this.electionService.downloadPdfReport(electionId);
+    this.electionService.exportPdfReport(electionId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `proces-verbal-election-${electionId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        this.notificationService.showSuccess('Procès-verbal PDF téléchargé avec succès.');
+      },
+      error: (err) => {
+        console.error('Erreur export PDF:', err);
+        this.notificationService.showError('Échec du téléchargement du procès-verbal PDF.');
+      }
+    });
   }
 }

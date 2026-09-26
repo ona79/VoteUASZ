@@ -19,6 +19,7 @@ public class ComplaintController {
     private final ComplaintService complaintService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ELECTEUR', 'CANDIDAT')")
     public ResponseEntity<ComplaintDto> submitComplaint(@RequestBody ComplaintDto dto, Authentication auth) {
         return ResponseEntity.ok(complaintService.submitComplaint(dto, auth.getName()));
     }
