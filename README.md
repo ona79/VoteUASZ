@@ -6,19 +6,20 @@ Système de vote électronique sécurisé, mobile-first, développé pour l'**Un
 
 ---
 
-## 📋 Table des Matières
+## Table des Matières
 
-- [À Propos du Projet](#-à-propos-du-projet)
-- [Fonctionnalités](#-fonctionnalités)
-- [Architecture Technique](#-architecture-technique)
-- [Structure du Projet](#-structure-du-projet)
-- [Démarrage Rapide](#-démarrage-rapide)
-- [Comptes de Démonstration](#-comptes-de-démonstration)
-- [Design System](#-design-system)
-- [Sécurité](#-sécurité)
-- [Tests](#-tests)
-- [Déploiement Cloud](#-déploiement-cloud)
-- [Documentation](#-documentation)
+- [À Propos du Projet](#à-propos-du-projet)
+- [Fonctionnalités](#fonctionnalités)
+- [Architecture Technique](#architecture-technique)
+- [Structure du Projet](#structure-du-projet)
+- [Démarrage Rapide](#démarrage-rapide)
+- [Comptes de Démonstration](#comptes-de-démonstration)
+- [Design System](#design-system)
+- [Sécurité](#sécurité)
+- [Tests](#tests)
+- [Déploiement Cloud](#déploiement-cloud)
+- [Structure des Branches Git](#structure-des-branches-git)
+- [Documentation](#documentation)
 
 ---
 
@@ -36,42 +37,24 @@ Elle permet à l'université d'organiser toutes ses élections internes (Délég
 
 ### Par Rôle Utilisateur
 
-<table>
-<thead>
-  <tr>
-    <th>Rôle</th>
-    <th>Fonctionnalités</th>
-  </tr>
-</thead>
-<tbody>
-  <tr>
-    <td><b>Super-Admin</b></td>
-    <td>Import CSV des comptes, création d'élections, supervision globale, transitions d'états</td>
-  </tr>
-  <tr>
-    <td><b>Commission Électorale</b></td>
-    <td>Validation / rejet des candidatures, dépouillement, génération de PV officiel PDF</td>
-  </tr>
-  <tr>
-    <td><b>Candidat</b></td>
-    <td>Dépôt de dossier (photo · programme PDF · CV), publication de campagne avec vidéo YouTube / Vimeo</td>
-  </tr>
-  <tr>
-    <td><b>Électeur</b></td>
-    <td>Consultation des élections éligibles, vote OTP sécurisé, résultats en temps réel</td>
-  </tr>
-</tbody>
-</table>
+| Rôle | Fonctionnalités |
+|---|---|
+| **Super-Admin** | Import CSV des comptes, création d'élections, supervision globale, transitions d'états, audit cryptographique (UC5), validation des candidatures (UC7) |
+| **Commission Électorale** | Validation / rejet des candidatures, dépouillement, génération de PV officiel PDF, traitement des réclamations post-électorales |
+| **Candidat** | Dépôt de dossier (photo, programme PDF, CV — nom récupéré automatiquement depuis le compte authentifié), publication de campagne avec vidéo YouTube / Vimeo, soumission de réclamations |
+| **Electeur** | Consultation des élections éligibles, vote OTP sécurisé, résultats en temps réel, soumission de réclamations post-électorales |
 
 ### Fonctionnalités Clés
 
-- 🔒 **Authentification pré-provisionnée** — Aucune inscription libre ; les comptes sont importés via CSV
-- 🎯 **Éligibilité dynamique** — Restriction automatique par UFR, Filière et Niveau selon le type d'élection
-- 🔄 **Machine à états électorale** — Workflow strict : `CONFIGURATION → CAMPAGNE → VOTE_OUVERT → DEPOUILLEMENT → PUBLICATION → CLOTURE`
-- 🗳️ **Vote OTP en 3 étapes** — Code email → VoteToken unique → Bulletin chiffré AES-256
-- 📡 **Résultats live WebSocket** — Diffusion STOMP automatique pendant le dépouillement
-- 📄 **Procès-Verbal PDF** — Génération automatique de documents officiels (OpenPDF)
-- 🔔 **Notifications in-app** — Système de toasts et modales remplaçant les `alert()` natifs
+- **Authentification pré-provisionnée** — Aucune inscription libre ; les comptes sont importés via CSV par l'administrateur
+- **Eligibilité dynamique** — Restriction automatique par UFR, Filière et Niveau selon le type d'élection
+- **Machine à états électorale** — Workflow strict : `CONFIGURATION → CAMPAGNE → VOTE_OUVERT → DEPOUILLEMENT → PUBLICATION → CLOTURE`
+- **Vote OTP en 3 étapes** — Code email → VoteToken unique → Bulletin chiffré AES-256
+- **Résultats live WebSocket** — Diffusion STOMP automatique pendant le dépouillement
+- **Procès-Verbal PDF** — Génération automatique de documents officiels (OpenPDF), téléchargement authentifié via JWT
+- **Audit cryptographique (UC5)** — Journal d'émargement anonymisé + empreintes SHA-256 des bulletins, exportable en CSV
+- **Réclamations post-électorales** — Soumission par les électeurs et candidats, traitement par la commission
+- **Notifications in-app** — Système de toasts et modales remplaçant les `alert()` natifs
 
 ---
 
@@ -102,8 +85,8 @@ Elle permet à l'université d'organiser toutes ses élections internes (Délég
            │                  │
 ┌──────────▼───────┐ ┌────────▼──────────────┐
 │  PostgreSQL 16   │ │  Mailhog SMTP (8025)  │
-│  port interne 5432 │ │  Visualisation OTP    │
-│  exposé → 5433   │ │                       │
+│  port interne 5432│ │  Visualisation OTP    │
+│  exposé → 5540   │ │                       │
 └──────────────────┘ └───────────────────────┘
 ```
 
@@ -114,37 +97,38 @@ Elle permet à l'université d'organiser toutes ses élections internes (Délég
 ```
 VoteUASZ/
 │
-├── 📁 backend/                         # Application Spring Boot
+├── backend/                            # Application Spring Boot
 │   └── src/main/java/
 │       ├── config/                     # Security, JWT, WebSocket, CORS
 │       ├── controller/                 # REST Controllers
-│       ├── service/                    # Logique métier (Éligibilité, Crypto, Import...)
-│       ├── model/                      # Entités JPA (Election, User, Ballot, VoteToken...)
+│       ├── service/                    # Logique métier (Eligibilité, Crypto, Import...)
+│       ├── entity/                     # Entités JPA (Election, User, Ballot, VoteToken...)
 │       └── repository/                 # Spring Data JPA Repositories
 │
-├── 📁 frontend/                        # Application Angular 17
+├── frontend/                           # Application Angular 17
 │   └── src/app/
 │       ├── components/
 │       │   ├── login/                  # Page de connexion responsive
 │       │   ├── navbar/                 # Navigation (icônes Lucide SVG)
-│       │   ├── admin-dashboard/        # Super-Admin
-│       │   ├── commission-dashboard/   # Commission Électorale
+│       │   ├── admin-dashboard/        # Super-Admin (audit, candidatures, élections)
+│       │   ├── commission-dashboard/   # Commission Electorale (validations, réclamations)
 │       │   ├── candidate-dashboard/    # Espace Candidat
-│       │   ├── election-list/          # Liste des élections
+│       │   ├── election-list/          # Liste des élections avec filtres
 │       │   ├── election-detail/        # Détail + Workflow vote OTP
+│       │   ├── shared/election-filter/ # Composant filtre réutilisable
 │       │   └── notification-container/ # Toasts + Modales
-│       ├── services/                   # auth · election · vote · websocket · notification
+│       ├── services/                   # auth · election · vote · websocket · notification · complaint · candidacy
 │       ├── guards/                     # authGuard · roleGuard
-│       ├── interceptors/               # AuthInterceptor (JWT auto-injection)
+│       ├── interceptors/               # jwt.interceptor (injection JWT + gestion session expirée)
 │       └── models/                     # Interfaces TypeScript
 │
-├── 📁 docs/
+├── docs/
 │   ├── UML/                            # Diagrammes de conception (Mermaid)
 │   └── openapi.yaml                    # Spécification REST API (OpenAPI 3.0)
 │
-├── 🔑 .env.example                     # Modèle des variables d'environnement (versionné)
-├── 🐳 docker-compose.yml               # PostgreSQL + Mailhog + Backend
-└── 🐳 Dockerfile                       # Multi-stage build (Maven → JRE 21 slim)
+├── .env.example                        # Modèle des variables d'environnement (versionné)
+├── docker-compose.yml                  # PostgreSQL + Mailhog + Backend
+└── Dockerfile                          # Multi-stage build (Maven → JRE 21 slim)
 ```
 
 ---
@@ -162,7 +146,7 @@ VoteUASZ/
 
 ---
 
-### Option A — Docker Compose *(Recommandé)*
+### Option A — Docker Compose (Recommandé)
 
 Lance l'application complète en une seule commande :
 
@@ -170,16 +154,16 @@ Lance l'application complète en une seule commande :
 git clone https://github.com/ona79/VoteUASZ.git
 cd VoteUASZ
 cp .env.example .env              # Crée votre fichier d'environnement local
-docker-compose up --build
+docker compose up --build
 ```
 
 | Service | URL |
 |---|---|
 | Application Web (API + Frontend) | http://localhost:8080 |
 | Mailhog — Visualisation des OTP | http://localhost:8025 |
-| PostgreSQL (connexion externe — DBeaver, pgAdmin…) | `localhost:5433` |
+| PostgreSQL (connexion externe — DBeaver, pgAdmin...) | `localhost:5540` |
 
-> 💡 **Astuce :** Ouvrez http://localhost:8025 pendant un vote pour voir les codes OTP arriver en temps réel.
+> Ouvrez http://localhost:8025 pendant un vote pour voir les codes OTP arriver en temps réel.
 
 ---
 
@@ -188,19 +172,19 @@ docker-compose up --build
 <details>
 <summary>Voir les instructions détaillées</summary>
 
-**Étape 1 — Lancer uniquement l'infrastructure**
+**Etape 1 — Lancer uniquement l'infrastructure**
 ```bash
-docker-compose up postgres mailhog
+docker compose up postgres mailhog
 ```
 
-**Étape 2 — Backend Spring Boot**
+**Etape 2 — Backend Spring Boot**
 ```bash
 cd backend
 mvn spring-boot:run
 # API disponible sur http://localhost:8080/api
 ```
 
-**Étape 3 — Frontend Angular**
+**Etape 3 — Frontend Angular**
 ```bash
 cd frontend
 npm install
@@ -218,10 +202,10 @@ npm start
 
 | Rôle | Identifiant | Mot de Passe |
 |---|---|---|
-| Super-Admin Électoral | `ADMIN001` | `AdminSecure2026!` |
-| Commission Électorale | `COMM001` | `CommSecure2026!` |
+| Super-Admin Electoral | `ADMIN001` | `AdminSecure2026!` |
+| Commission Electorale | `COMM001` | `CommSecure2026!` |
 | Candidat | `CAND202301` | `CandSecure2026!` |
-| Électeur (Étudiant L3) | `20230001` | `ElecteurSecure2026!` |
+| Electeur (Etudiant L3) | `20230001` | `ElecteurSecure2026!` |
 
 ---
 
@@ -231,7 +215,7 @@ L'interface suit une charte graphique **mobile-first** cohérente sur tous les �
 
 ### Palette & Typographie
 
-| Élément | Valeur |
+| Elément | Valeur |
 |---|---|
 | Couleur principale | `#047857` (Vert UASZ emerald-700) |
 | Couleur secondaire | `#065f46` (vert foncé, dégradé) |
@@ -263,12 +247,12 @@ const raison = await this.notificationService.prompt(
   'Ex : Dossier incomplet...',
   'Rejeter'
 );
-if (raison === null) return; // Annulation propre (Échap, clic extérieur, Annuler)
+if (raison === null) return; // Annulation propre (Echap, clic extérieur, Annuler)
 ```
 
 **Positionnement responsive :**
-- 📱 **Mobile** → Toasts en **haut de l'écran** (évite la Bottom Tab Bar)
-- 🖥️ **Desktop** → Toasts en **bas à droite**
+- Mobile : toasts en haut de l'écran (évite la Bottom Tab Bar)
+- Desktop : toasts en bas à droite
 
 </details>
 
@@ -282,11 +266,18 @@ if (raison === null) return; // Annulation propre (Échap, clic extérieur, Annu
 | **Chiffrement des bulletins** | AES-256 (clé via variable d'environnement `CRYPTO_SECRET`) |
 | **Hachage des OTP** | SHA-256 |
 | **Anti-double vote** | `VoteToken` à usage unique + marquage `hasVoted` en base |
-| **Anonymat du suffrage** | Dissociation totale identité électeur ↔ contenu du bulletin |
+| **Anonymat du suffrage** | Dissociation totale identité électeur / contenu du bulletin |
 | **Contrôle d'accès routes** | `authGuard` (authentification) + `roleGuard(roles[])` (autorisation) |
-| **Requêtes HTTP** | `AuthInterceptor` — injection automatique du JWT Bearer token |
+| **Injection JWT automatique** | `jwt.interceptor` — injection du Bearer token sur toutes les requêtes HTTP |
+| **Téléchargements authentifiés** | Export CSV et PDF via `HttpClient` avec token JWT (pas de `window.open`) |
 | **Validité OTP** | 5 minutes, usage unique, invalidé après consommation |
+| **Anti-brute-force login** | Verrouillage du compte après 5 tentatives échouées consécutives (5 minutes) |
+| **Anti-brute-force OTP** | Invalidation du token après 5 tentatives de code incorrectes |
+| **Quota et cooldown OTP** | Minimum 60 secondes entre deux demandes de code, maximum 5 demandes par heure |
+| **Révocation de session** | Un compte désactivé perd immédiatement l'accès, même avec un token JWT encore valide |
+| **Restriction CORS** | Liste fermée d'origines autorisées, aucune politique wildcard (`*`) |
 | **Mot de passe électeurs CSV** | Configurable via `DEFAULT_ELECTEUR_PASSWORD` (variable d'environnement) — jamais écrit en clair dans le code |
+| **Traçabilité comptes à privilèges** | Création de comptes SUPER_ADMIN et COMMISSION_ELECTORALE via CSV tracée en logs WARN avec matricule et opérateur |
 
 ---
 
@@ -299,14 +290,25 @@ cd backend
 mvn test
 ```
 
-| Suite de Tests | Ce qui est testé |
-|---|---|
-| `EligibilityServiceTest` | Critères dynamiques d'éligibilité (UFR, Filière, Niveau) |
-| `ElectionStateMachineTest` | Respect strict des transitions d'états électoraux |
-| `CryptoServiceTest` | Intégrité du chiffrement AES-256 et du hachage SHA-256 |
-| `UserImportServiceTest` | Import CSV, gestion des doublons et erreurs de format |
-| `AntiDoubleVoteTest` | Unicité du suffrage et sécurité temporelle des OTP |
-| `FullElectionWorkflowIntegrationTest` | Test d'intégration bout-en-bout (`@SpringBootTest`) |
+**Résultats actuels : 84 tests — 0 échec — 0 erreur**
+
+| Suite de Tests | Nombre de tests | Ce qui est testé |
+|---|---|---|
+| `EligibilityServiceTest` | 13 | Critères dynamiques d'éligibilité (UFR, Filière, Niveau) |
+| `ElectionStateMachineTest` | 14 | Respect strict des transitions d'états électoraux |
+| `CryptoServiceTest` | 7 | Intégrité du chiffrement AES-256 et du hachage SHA-256 |
+| `UserImportServiceTest` | 5 | Import CSV, gestion des doublons et erreurs de format |
+| `AntiDoubleVoteTest` | 4 | Unicité du suffrage et sécurité temporelle des OTP |
+| `AuthControllerTest` | 6 | Authentification, brute-force, compte désactivé |
+| `VoteControllerTest` | 8 | Flux complet OTP, cooldown, quota, double vote |
+| `ComplaintControllerTest` | 8 | Soumission et traitement des réclamations par rôle |
+| `CampaignControllerTest` | 2 | Publication de campagne candidat |
+| `ElectionControllerTest` | 3 | Création et gestion d'élections |
+| `OtpCooldownAndQuotaTest` | 3 | Cooldown 60s et quota horaire des demandes OTP |
+| `OtpResendLoopTest` | *(intégration)* | Boucle de renvoi OTP avec Spring Boot Test |
+| `UserDeactivationIntegrationTest` | 1 | Révocation de session sur compte désactivé |
+| `SuperAdminCsvImportTest` | 3 | Import CSV de comptes à privilèges avec traçabilité |
+| `FullElectionWorkflowIntegrationTest` | *(intégration)* | Test bout-en-bout `@SpringBootTest` |
 
 ### Frontend — Angular (Karma / Jasmine)
 
@@ -334,9 +336,12 @@ npm test
 | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://<host>:5432/voteuasz_db` |
 | `SPRING_DATASOURCE_USERNAME` | Utilisateur DB de production |
 | `SPRING_DATASOURCE_PASSWORD` | Mot de passe DB sécurisé |
-| `JWT_SECRET` | Clé aléatoire min. 256 bits |
-| `CRYPTO_SECRET` | Clé AES min. 32 caractères |
-| `DEFAULT_ELECTEUR_PASSWORD` | Mot de passe attribué aux électeurs importés via CSV (à définir en production) |
+| `JWT_SECRET` | Clé aléatoire minimum 256 bits |
+| `CRYPTO_SECRET` | Clé AES minimum 32 caractères |
+| `CRYPTO_SECRET_KEY` | Alias utilisé par certaines configurations — même valeur que `CRYPTO_SECRET` |
+| `DEFAULT_ELECTEUR_PASSWORD` | Mot de passe attribué aux électeurs importés via CSV |
+| `DEFAULT_CANDIDAT_PASSWORD` | Mot de passe attribué aux candidats importés via CSV |
+| `ALLOWED_ORIGINS` | Liste des origines frontend autorisées (ex : `https://voteuasz.vercel.app`) |
 | `SPRING_MAIL_HOST` | Hôte SMTP de production |
 | `SPRING_MAIL_PORT` | `587` |
 | `SPRING_MAIL_USERNAME` | Adresse email d'envoi |
@@ -359,6 +364,20 @@ npm test
 
 ---
 
+## Structure des Branches Git
+
+Ce dépôt suit une organisation de branches conforme au cahier des charges du projet :
+
+| Branche | Rôle |
+|---|---|
+| `main` | Code de production stable — ne reçoit que des merges depuis `develop` |
+| `develop` | Branche d'intégration — reçoit les merges des branches `feature/*` |
+| `feature/*` | Branches de développement thématiques (ex : `feature/corrections-conformite`) |
+
+Le flux de travail standard est : `feature/* → develop → main`.
+
+---
+
 ## Documentation
 
 | Document | Description |
@@ -371,8 +390,6 @@ npm test
 ---
 
 <div align="center">
-
----
 
 Projet académique réalisé dans le cadre du **Semestre 6**
 
