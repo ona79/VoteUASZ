@@ -7,28 +7,55 @@ Ce document contient la spécification graphique et textuelle de l'architecture 
 ## 1. Diagramme de Cas d'Utilisation (Use Case Diagram)
 
 ```mermaid
-usecaseDiagram
-    actor SuperAdmin as "Super-Admin Électoral"
-    actor Commission as "Commission Électorale"
-    actor Candidat as "Candidat"
-    actor Electeur as "Électeur"
+flowchart LR
+    subgraph Acteurs ["👤 Acteurs du Système"]
+        SuperAdmin["Super-Admin Électoral"]
+        Commission["Commission Électorale"]
+        Candidat["Candidat"]
+        Electeur["Électeur"]
+    end
 
-    SuperAdmin --> (Import CSV des Électeurs)
-    SuperAdmin --> (Configuration des Élections)
-    SuperAdmin --> (Changement d'État du Scrutin)
-    SuperAdmin --> (Consultation de l'Audit Cryptographique)
+    subgraph Admin_Space ["⚙️ Gestion Globale"]
+        UC1(["Import CSV des Électeurs"])
+        UC2(["Configuration des Élections"])
+        UC3(["Changement d'État du Scrutin"])
+        UC4(["Consultation Audit Cryptographique"])
+    end
 
-    Commission --> (Validation/Rejet des Candidatures)
-    Commission --> (Traitement des Réclamations)
-    Commission --> (Supervision du Dépouillement)
+    subgraph Commission_Space ["🏛️ Commission Électorale"]
+        UC5(["Validation / Rejet Candidatures"])
+        UC6(["Traitement des Réclamations"])
+        UC7(["Supervision du Dépouillement"])
+    end
 
-    Candidat --> (Dépôt du Dossier de Candidature)
-    Candidat --> (Publication de Campagne - Texte, Affiche, Vidéo)
+    subgraph Candidat_Space ["📢 Espace Candidat"]
+        UC8(["Dépôt Dossier Candidature"])
+        UC9(["Publication de Campagne (Texte, Affiche, Vidéo)"])
+    end
 
-    Electeur --> (Demande OTP de Vote - 5 min)
-    Electeur --> (Soumission du Bulletin Chiffré)
-    Electeur --> (Consultation des Résultats Live)
-    Electeur --> (Dépôt de Réclamation)
+    subgraph Electeur_Space ["🗳️ Espace Électeur"]
+        UC10(["Demande OTP de Vote (5 min)"])
+        UC11(["Soumission Bulletin Chiffré"])
+        UC12(["Consultation Résultats Live"])
+        UC13(["Dépôt de Réclamation"])
+    end
+
+    SuperAdmin --> UC1
+    SuperAdmin --> UC2
+    SuperAdmin --> UC3
+    SuperAdmin --> UC4
+
+    Commission --> UC5
+    Commission --> UC6
+    Commission --> UC7
+
+    Candidat --> UC8
+    Candidat --> UC9
+
+    Electeur --> UC10
+    Electeur --> UC11
+    Electeur --> UC12
+    Electeur --> UC13
 ```
 
 ---
