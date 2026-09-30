@@ -156,7 +156,7 @@ class AuthControllerTest {
     // ───────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Forgot Password — 200 OK avec identifiant existant")
+    @DisplayName("Forgot Password — 200 OK avec identifiant existant (réponse neutre anti-énumération)")
     void forgotPassword_shouldReturn200_whenUserExists() throws Exception {
         User mockUser = User.builder().email("moussa@uasz.sn").matricule("20230001").build();
         when(userRepository.findByMatricule("20230001")).thenReturn(Optional.of(mockUser));
@@ -166,12 +166,12 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(Map.of("identifier", "20230001")))
                         .with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Instructions de réinitialisation envoyées à moussa@uasz.sn"));
+                .andExpect(jsonPath("$.message").value("Si ce compte existe, les instructions ont été envoyées."));
     }
 
     @Test
-    @DisplayName("Forgot Password — 400 Bad Request si identifiant introuvable")
-    void forgotPassword_shouldThrowException_whenUserNotFound() throws Exception {
+    @DisplayName("Forgot Password — 200 OK avec réponse identique si identifiant introuvable (anti-énumération)")
+    void forgotPassword_shouldReturn200_whenUserNotFound() throws Exception {
         when(userRepository.findByMatricule("INCONNU")).thenReturn(Optional.empty());
         when(userRepository.findByEmail("INCONNU")).thenReturn(Optional.empty());
 
@@ -179,6 +179,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("identifier", "INCONNU")))
                         .with(csrf()))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Si ce compte existe, les instructions ont été envoyées."));
     }
 }

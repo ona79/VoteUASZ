@@ -212,9 +212,20 @@ public class VotingService {
         List<Candidature> candidatures = candidatureRepository.findByElectionIdAndStatut(electionId, CandidacyStatus.APPROVED);
         long totalVotes = ballotRepository.countByElectionId(electionId);
 
+        // Optimisation N+1 : récupération groupée en 1 seule requête SQL GROUP BY
+        Map<Long, Long> votesMap = new HashMap<>();
+        List<Object[]> groupedCounts = ballotRepository.countVotesGroupedByCandidature(electionId);
+        if (groupedCounts != null) {
+            for (Object[] row : groupedCounts) {
+                Long candId = (Long) row[0];
+                Long count = ((Number) row[1]).longValue();
+                votesMap.put(candId, count);
+            }
+        }
+
         List<LiveResultsDto.CandidatureResultDto> candidateResults = new ArrayList<>();
         for (Candidature c : candidatures) {
-            long count = ballotRepository.countByElectionIdAndCandidatureId(electionId, c.getId());
+            long count = votesMap.getOrDefault(c.getId(), 0L);
             double percentage = totalVotes > 0 ? ((double) count / totalVotes) * 100.0 : 0.0;
 
             String candidatName = c.getCandidat() != null 

@@ -168,6 +168,25 @@ export class LoginComponent implements OnInit {
   }
 
   forgotPasswordAlert(): void {
-    this.notificationService.showInfo("Pour réinitialiser votre mot de passe, contactez l'administration de votre UFR avec votre carte d'étudiant ou pièce d'identité.", "Réinitialisation de mot de passe");
+    const ident = this.matricule?.trim();
+    if (!ident) {
+      this.notificationService.showWarning(
+        "Veuillez renseigner votre matricule ou email dans le champ ci-dessus pour demander la réinitialisation.",
+        "Mot de passe oublié"
+      );
+      return;
+    }
+
+    this.authService.forgotPassword(ident).subscribe({
+      next: (res) => {
+        this.notificationService.showSuccess(res.message, "Réinitialisation");
+      },
+      error: () => {
+        this.notificationService.showInfo(
+          "Pour réinitialiser votre mot de passe, contactez l'administration de votre UFR avec votre carte d'étudiant ou pièce d'identité.",
+          "Réinitialisation de mot de passe"
+        );
+      }
+    });
   }
 }

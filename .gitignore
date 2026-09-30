@@ -17,3 +17,7 @@ frontend/.angular/
 .idea/
 .vscode/
 *.DS_Store
+reports/
+backend/reports/
+*.log
+*.pid

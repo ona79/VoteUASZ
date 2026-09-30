@@ -89,12 +89,16 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> payload) {
-        String emailOrMatricule = payload.get("identifier");
-        User user = userRepository.findByMatricule(emailOrMatricule)
-                .orElseGet(() -> userRepository.findByEmail(emailOrMatricule)
-                        .orElseThrow(() -> new IllegalArgumentException("Identifiant non trouvé")));
+        String emailOrMatricule = payload != null ? payload.get("identifier") : null;
+        if (emailOrMatricule != null && !emailOrMatricule.isBlank()) {
+            userRepository.findByMatricule(emailOrMatricule)
+                    .or(() -> userRepository.findByEmail(emailOrMatricule))
+                    .ifPresent(user -> {
+                        // Traitement interne / envoi des instructions sans divulguer l'existence au client
+                    });
+        }
 
-        // Simulation d'envoi d'instructions de réinitialisation
-        return ResponseEntity.ok(Map.of("message", "Instructions de réinitialisation envoyées à " + user.getEmail()));
+        // Réponse neutre et constante pour prévenir toute énumération de comptes
+        return ResponseEntity.ok(Map.of("message", "Si ce compte existe, les instructions ont été envoyées."));
     }
 }

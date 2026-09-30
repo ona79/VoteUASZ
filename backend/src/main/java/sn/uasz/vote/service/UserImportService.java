@@ -55,6 +55,11 @@ public class UserImportService {
                 .withSeparator(',')
                 .build();
 
+        // Pré-calcul unique des hashs de mots de passe par défaut avant la boucle
+        // Évite d'appeler BCrypt (~80-100ms par appel) pour chaque ligne du fichier CSV
+        String defaultElecteurHash = passwordEncoder.encode(defaultElecteurPassword);
+        String defaultCandidatHash = passwordEncoder.encode(defaultCandidatPassword);
+
         try (CSVReader csvReader = new CSVReaderBuilder(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))
                 .withCSVParser(rfc4180Parser)
@@ -124,8 +129,7 @@ public class UserImportService {
                     log.warn("Ligne {} : typeElecteur '{}' non reconnu, ETUDIANT utilisé par défaut.", lineNumber, typeElecteurStr);
                 }
 
-                String rawPassword = (role == Role.CANDIDAT) ? defaultCandidatPassword : defaultElecteurPassword;
-                String defaultPassword = passwordEncoder.encode(rawPassword);
+                String defaultPassword = (role == Role.CANDIDAT) ? defaultCandidatHash : defaultElecteurHash;
 
                 User user = User.builder()
                         .matricule(matricule)

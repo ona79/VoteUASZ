@@ -1,8 +1,10 @@
 package sn.uasz.vote.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -10,32 +12,47 @@ import org.springframework.stereotype.Service;
 import jakarta.mail.internet.MimeMessage;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class OtpEmailService {
 
     private final JavaMailSender mailSender;
+    private final Environment environment;
+
+    public OtpEmailService(@Autowired(required = false) JavaMailSender mailSender, Environment environment) {
+        this.mailSender = mailSender;
+        this.environment = environment;
+    }
 
     @Value("${app.mail.from:${spring.mail.username:noreply@voteuasz.sn}}")
     private String fromAddress;
 
     /**
      * Envoie le code OTP par e-mail à l'électeur et le consigne dans les logs.
-     * En cas de problème de serveur SMTP (ex: serveur local hors-ligne), l'OTP est loggé
-     * dans la console du serveur pour permettre le déroulement du test sans bloquer.
+     * En production, le code est strictement masqué ([MASQUÉ EN PROD]) pour la sécurité.
+     * En profils de développement ou test, le code reste affiché pour faciliter le débogage.
      *
      * @param toEmail       adresse de l'électeur
      * @param otpCode       le code à 6 chiffres
      * @param electionTitre titre de l'élection
      */
     public void sendOtpByEmail(String toEmail, String otpCode, String electionTitre) {
-        log.info("=================================================");
-        log.info("🔑 [OTP VOTEUASZ] Code OTP généré pour {} : {}", toEmail, otpCode);
-        log.info("=================================================");
+        boolean isProd = environment.acceptsProfiles(Profiles.of("prod"));
+        if (isProd) {
+            log.info("🔑 [OTP VOTEUASZ] Code OTP généré et acheminé par email pour {} : [MASQUÉ EN PROD]", toEmail);
+        } else {
+            log.info("=================================================");
+            log.info("🔑 [OTP VOTEUASZ] Code OTP généré pour {} : {}", toEmail, otpCode);
+            log.info("=================================================");
+        }
 
         String sender = (fromAddress != null && !fromAddress.trim().isEmpty())
                 ? fromAddress.trim()
                 : "noreply@voteuasz.sn";
+
+        if (mailSender == null) {
+            log.info("[OTP] MailSender non disponible (environnement test/hors-ligne). Email non expédié par SMTP.");
+            return;
+        }
 
         try {
             MimeMessage message = mailSender.createMimeMessage();

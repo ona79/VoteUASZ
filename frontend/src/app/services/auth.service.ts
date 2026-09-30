@@ -53,6 +53,9 @@ export class AuthService {
     );
   }
 
+  forgotPassword(identifier: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/forgot-password`, { identifier });
+  }
 
   logout(): void {
     localStorage.removeItem('voteuasz_token');

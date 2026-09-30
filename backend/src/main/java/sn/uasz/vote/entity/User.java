@@ -1,5 +1,6 @@
 package sn.uasz.vote.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import sn.uasz.vote.enums.Role;
@@ -34,6 +35,7 @@ public class User {
 
     private String telephone;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 

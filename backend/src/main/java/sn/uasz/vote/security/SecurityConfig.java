@@ -55,7 +55,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints publics
+                        // Endpoints publics & ressources statiques Frontend
+                        .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/assets/**", "/favicon.ico", "/*.png", "/*.svg", "/*.webmanifest", "/*.json").permitAll()
                         .requestMatchers("/api/v1/auth/**", "/ws/**", "/h2-console/**", "/swagger-ui/**", "/api-docs/**", "/error").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/elections", "/api/v1/elections/**", "/api/v1/results/**", "/api/v1/candidacies/**", "/api/v1/candidatures/**", "/api/v1/campaigns/**").permitAll()
                         // Création & modification des élections — SUPER_ADMIN uniquement

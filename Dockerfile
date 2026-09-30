@@ -23,10 +23,12 @@ WORKDIR /app
 # Variable d'environnement pour la production
 ENV SPRING_PROFILES_ACTIVE=prod
 ENV PORT=8080
+ENV SERVER_PORT=${PORT}
 
 COPY --from=build-backend /app/backend/target/*.jar app.jar
 COPY --from=build-frontend /app/frontend/dist/voteuasz-frontend/browser ./static
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "-Dserver.port=${PORT}", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-${SERVER_PORT:-8080}} -jar app.jar"]
+
