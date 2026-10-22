@@ -58,7 +58,7 @@ public class SecurityConfig {
                         // Endpoints publics & ressources statiques Frontend
                         .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/assets/**", "/favicon.ico", "/*.png", "/*.svg", "/*.webmanifest", "/*.json").permitAll()
                         .requestMatchers("/api/v1/auth/**", "/ws/**", "/h2-console/**", "/swagger-ui/**", "/api-docs/**", "/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/elections", "/api/v1/elections/**", "/api/v1/results/**", "/api/v1/candidacies/**", "/api/v1/candidatures/**", "/api/v1/campaigns/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/elections", "/api/v1/elections/**", "/api/v1/results/**", "/api/v1/candidacies/**", "/api/v1/candidatures/**", "/api/v1/campaigns/**", "/api/v1/vote/status/**").permitAll()
                         // Création & modification des élections — SUPER_ADMIN uniquement
                         .requestMatchers(HttpMethod.POST, "/api/v1/elections", "/api/v1/elections/**").hasRole("SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/elections", "/api/v1/elections/**").hasRole("SUPER_ADMIN")

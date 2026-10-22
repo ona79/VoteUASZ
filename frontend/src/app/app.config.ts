@@ -31,7 +31,9 @@ import {
   Info,
   BarChart2,
   Play,
-  ChevronDown
+  ChevronDown,
+  LogIn,
+  ArrowDown
 } from 'lucide-angular';
 import { routes } from './app.routes';
 import { jwtInterceptor } from './interceptors/jwt.interceptor';
@@ -71,10 +73,12 @@ export const appConfig: ApplicationConfig = {
         Info,
         BarChart2,
         Play,
-        ChevronDown
+        ChevronDown,
+        LogIn,
+        ArrowDown
     })),
     provideServiceWorker('ngsw-worker.js', {
-        enabled: !isDevMode(),
+        enabled: false,
         registrationStrategy: 'registerWhenStable:30000'
     })
 ]

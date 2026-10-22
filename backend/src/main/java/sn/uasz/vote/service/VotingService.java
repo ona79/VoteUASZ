@@ -248,4 +248,10 @@ public class VotingService {
                 .candidateResults(candidateResults)
                 .build();
     }
+
+    public boolean hasUserVoted(String userMatricule, Long electionId) {
+        return userRepository.findByMatricule(userMatricule)
+                .map(u -> voterAuditLogRepository.existsByUserIdAndElectionId(u.getId(), electionId))
+                .orElse(false);
+    }
 }

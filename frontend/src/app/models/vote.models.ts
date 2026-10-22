@@ -64,6 +64,8 @@ export interface Candidature {
   candidatNomComplet?: string;
   candidatMatricule?: string;
   electionId?: number;
+  electionStatut?: ElectionStatus;
+  electionTitre?: string;
   posts?: CampaignPost[];
 }
 

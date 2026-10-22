@@ -70,7 +70,7 @@ import { Election, Candidature, CampaignPost } from '../../models/vote.models';
               <select [(ngModel)]="newCand.electionId" name="electionId" required
                       class="uasz-input !py-1.5 !px-2.5 text-xs font-bold">
                 <option [ngValue]="null" disabled selected>Sélectionner une élection</option>
-                <option *ngFor="let e of openElections" [value]="e.id" [disabled]="hasAppliedToElection(e.id)">
+                <option *ngFor="let e of openElections" [ngValue]="e.id" [disabled]="hasAppliedToElection(e.id)">
                   {{ e.titre }} ({{ e.type }}) {{ hasAppliedToElection(e.id) ? '— [Déjà postulé]' : '' }}
                 </option>
               </select>
@@ -122,40 +122,46 @@ import { Election, Candidature, CampaignPost } from '../../models/vote.models';
             </div>
 
             <!-- Status Badges -->
+            <!-- Status Badges -->
             <span *ngIf="!selectedCandidature" class="text-[9px] font-black px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 flex items-center space-x-1 shrink-0">
               <lucide-icon name="info" class="w-3 h-3 text-slate-500 shrink-0"></lucide-icon>
               <span>Aucun dossier choisi</span>
             </span>
 
-            <span *ngIf="selectedCandidature && selectedCandidature.statut === 'PENDING'" class="text-[9px] font-black px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 flex items-center space-x-1 shrink-0">
+            <span *ngIf="selectedCandidature && isElectionClosedForCandidature(selectedCandidature)" class="text-[9px] font-black px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 flex items-center space-x-1 shrink-0 shadow-xs">
+              <lucide-icon name="lock" class="w-3 h-3 text-rose-600 shrink-0"></lucide-icon>
+              <span>Scrutin Clôturé — Verrouillé</span>
+            </span>
+
+            <span *ngIf="selectedCandidature && !isElectionClosedForCandidature(selectedCandidature) && selectedCandidature.statut === 'PENDING'" class="text-[9px] font-black px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 flex items-center space-x-1 shrink-0">
               <lucide-icon name="clock" class="w-3 h-3 text-amber-600 shrink-0"></lucide-icon>
               <span>En attente de validation</span>
             </span>
 
-            <span *ngIf="selectedCandidature && selectedCandidature.statut === 'REJECTED'" class="text-[9px] font-black px-2 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-200 flex items-center space-x-1 shrink-0">
+            <span *ngIf="selectedCandidature && !isElectionClosedForCandidature(selectedCandidature) && selectedCandidature.statut === 'REJECTED'" class="text-[9px] font-black px-2 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-200 flex items-center space-x-1 shrink-0">
               <lucide-icon name="x-circle" class="w-3 h-3 text-red-600 shrink-0"></lucide-icon>
               <span>Dossier Rejeté</span>
             </span>
 
-            <span *ngIf="selectedCandidature && selectedCandidature.statut === 'APPROVED' && hasAlreadyPublished(selectedCandidature)" class="text-[9px] font-black px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 flex items-center space-x-1 shrink-0">
-              <lucide-icon name="check-circle-2" class="w-3 h-3 text-blue-600 shrink-0"></lucide-icon>
-              <span>Publication déjà effectuée</span>
+            <span *ngIf="selectedCandidature && canPublish(selectedCandidature) && hasAlreadyPublished(selectedCandidature)" class="text-[9px] font-black px-2 py-0.5 rounded-md bg-emerald-50 text-[#047857] border border-emerald-200 flex items-center space-x-1 shrink-0">
+              <lucide-icon name="check-circle-2" class="w-3 h-3 text-[#047857] shrink-0"></lucide-icon>
+              <span>Prêt pour mise à jour</span>
             </span>
 
-            <span *ngIf="canPublish(selectedCandidature)" class="text-[9px] font-black px-2 py-0.5 rounded-md bg-emerald-50 text-[#047857] border border-emerald-200/70 flex items-center space-x-1 shrink-0">
+            <span *ngIf="selectedCandidature && canPublish(selectedCandidature) && !hasAlreadyPublished(selectedCandidature)" class="text-[9px] font-black px-2 py-0.5 rounded-md bg-emerald-50 text-[#047857] border border-emerald-200/70 flex items-center space-x-1 shrink-0">
               <lucide-icon name="check-circle-2" class="w-3 h-3 text-[#047857] shrink-0"></lucide-icon>
               <span>Prêt à publier</span>
             </span>
           </div>
 
-          <!-- Selection dropdown -->
-          <div class="mb-3 pl-1.5">
-            <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1">Sélectionner votre Candidature / Scrutin *</label>
-            <select [(ngModel)]="newPost.candidatureId" name="candidatureIdSelect"
-                    class="uasz-input !py-1.5 !px-2.5 text-xs font-bold">
-              <option [ngValue]="null">-- Choisir dans vos candidatures déposées --</option>
-              <option *ngFor="let c of myCandidatures" [value]="c.id">
-                Dossier {{ c.id }} — {{ getElectionTitle(c.electionId) }} [{{ c.statut === 'APPROVED' ? (hasAlreadyPublished(c) ? 'Déjà publié' : 'Approuvée') : c.statut === 'PENDING' ? 'En attente' : 'Rejetée' }}]
+          <!-- Dossier Selector Dropdown -->
+          <div class="mb-3.5 pl-1.5" *ngIf="myCandidatures.length > 0">
+            <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1.5">Choisir via la liste déroulante :</label>
+            <select [(ngModel)]="newPost.candidatureId" (ngModelChange)="onCandidatureIdChange($event)" name="candidatureIdSelect"
+                    class="uasz-input !py-2 !px-3 text-xs font-bold">
+              <option [ngValue]="null">-- Choisir dans vos candidatures --</option>
+              <option *ngFor="let c of myCandidatures" [ngValue]="c.id">
+                {{ c.id }} — {{ c.electionTitre || getElectionTitle(c.electionId) }} [{{ isElectionClosedForCandidature(c) ? 'Scrutin Clôturé — Verrouillé' : (c.statut === 'APPROVED' ? (hasAlreadyPublished(c) ? 'Validée • Publié (Modifiable)' : 'Validée • Prêt à publier') : c.statut === 'PENDING' ? 'En attente' : 'Rejetée') }}]
               </option>
             </select>
           </div>
@@ -163,55 +169,64 @@ import { Election, Candidature, CampaignPost } from '../../models/vote.models';
           <!-- Status Banners -->
           <div *ngIf="!selectedCandidature" class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-[11px] font-medium flex items-start space-x-2 mb-3 ml-1.5">
             <lucide-icon name="info" class="w-4 h-4 text-slate-500 shrink-0 mt-0.5"></lucide-icon>
-            <span>Sélectionnez ci-dessus une candidature approuvée pour publier votre contenu de campagne.</span>
+            <span>Sélectionnez ci-dessus une candidature approuvée pour publier ou modifier votre contenu de campagne.</span>
           </div>
 
-          <div *ngIf="selectedCandidature && selectedCandidature.statut === 'PENDING'" class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-start space-x-2 mb-3 ml-1.5">
+          <div *ngIf="selectedCandidature && isElectionClosedForCandidature(selectedCandidature)" class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-medium flex items-start space-x-2.5 mb-3 ml-1.5 shadow-sm">
+            <lucide-icon name="lock" class="w-4 h-4 text-rose-600 shrink-0 mt-0.5"></lucide-icon>
+            <div>
+              <b class="font-bold text-xs block text-rose-900 mb-0.5">Scrutin Clôturé — Campagne & Vote Terminés</b>
+              <span>Le vote pour cette élection est désormais terminé. Même si vous aviez déjà publié une campagne, il n'est plus permis de modifier ou de publier du nouveau contenu après la fin du scrutin.</span>
+            </div>
+          </div>
+
+          <div *ngIf="selectedCandidature && !isElectionClosedForCandidature(selectedCandidature) && selectedCandidature.statut === 'PENDING'" class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-start space-x-2 mb-3 ml-1.5">
             <lucide-icon name="clock" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></lucide-icon>
             <span>Votre dossier est en cours d'examen par la Commission Électorale. La publication sera déverrouillée dès validation de votre dossier.</span>
           </div>
 
-          <div *ngIf="selectedCandidature && selectedCandidature.statut === 'REJECTED'" class="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-[11px] font-medium flex items-start space-x-2 mb-3 ml-1.5">
+          <div *ngIf="selectedCandidature && !isElectionClosedForCandidature(selectedCandidature) && selectedCandidature.statut === 'REJECTED'" class="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-[11px] font-medium flex items-start space-x-2 mb-3 ml-1.5">
             <lucide-icon name="x-circle" class="w-4 h-4 text-red-600 shrink-0 mt-0.5"></lucide-icon>
             <span>Votre candidature a été rejetée. Motif : <b>{{ selectedCandidature.motifRejet || 'Non précisé' }}</b>.</span>
           </div>
 
-          <div *ngIf="selectedCandidature && selectedCandidature.statut === 'APPROVED' && hasAlreadyPublished(selectedCandidature)" class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-[11px] font-medium flex items-start space-x-2 mb-3 ml-1.5">
-            <lucide-icon name="check-circle-2" class="w-4 h-4 text-blue-600 shrink-0 mt-0.5"></lucide-icon>
-            <span>Vous avez déjà effectué votre publication officielle de campagne pour ce scrutin. <b>Une seule publication est autorisée par scrutin.</b></span>
+          <div *ngIf="selectedCandidature && !isElectionClosedForCandidature(selectedCandidature) && selectedCandidature.statut === 'APPROVED' && hasAlreadyPublished(selectedCandidature)" class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-medium flex items-start space-x-2 mb-3 ml-1.5">
+            <lucide-icon name="check-circle-2" class="w-4 h-4 text-[#047857] shrink-0 mt-0.5"></lucide-icon>
+            <span>Vous avez déjà une publication officielle active. En cours de campagne ou en plein vote, vous pouvez modifier les informations ci-dessous et cliquer sur <b>Mettre à jour</b>.</span>
           </div>
 
-          <form (ngSubmit)="publishPost()" class="space-y-3 flex-1 flex flex-col pl-1.5" [class.pointer-events-none]="!canPublish(selectedCandidature)">
+          <form (ngSubmit)="publishPost()" class="space-y-3 flex-1 flex flex-col pl-1.5">
             <div>
               <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1">Titre Publication *</label>
               <input type="text" [(ngModel)]="newPost.titre" name="titre" required placeholder="ex: Mon Programme pour l'UFR" [disabled]="!canPublish(selectedCandidature)"
-                     class="uasz-input !py-1.5 !px-2.5 text-xs font-bold disabled:bg-slate-100 disabled:text-slate-400"/>
+                     class="uasz-input !py-1.5 !px-2.5 text-xs font-bold disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"/>
             </div>
 
             <div>
               <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1">Contenu / Message *</label>
               <textarea [(ngModel)]="newPost.contenu" name="contenu" rows="2" required placeholder="Présentation de votre projet..." [disabled]="!canPublish(selectedCandidature)"
-                        class="uasz-input !py-1.5 !px-2.5 text-xs resize-none disabled:bg-slate-100 disabled:text-slate-400"></textarea>
+                        class="uasz-input !py-1.5 !px-2.5 text-xs resize-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"></textarea>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div>
                 <label class="block text-[9px] font-black text-slate-500 uppercase tracking-wider mb-1">URL Affiche (Image)</label>
                 <input type="text" [(ngModel)]="newPost.imageUrl" name="imageUrl" placeholder="https://..." [disabled]="!canPublish(selectedCandidature)"
-                       class="uasz-input !py-1.5 !px-2.5 text-xs disabled:bg-slate-100 disabled:text-slate-400"/>
+                       class="uasz-input !py-1.5 !px-2.5 text-xs disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"/>
               </div>
 
               <div>
                 <label class="block text-[9px] font-black text-[#047857] uppercase tracking-wider mb-1">URL Vidéo (YouTube)</label>
                 <input type="text" [(ngModel)]="newPost.videoEmbedUrl" name="videoEmbedUrl" placeholder="https://youtube.com/..." [disabled]="!canPublish(selectedCandidature)"
-                       class="uasz-input !py-1.5 !px-2.5 text-xs bg-emerald-50/40 disabled:bg-slate-100 disabled:text-slate-400"/>
+                       class="uasz-input !py-1.5 !px-2.5 text-xs bg-emerald-50/40 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"/>
               </div>
             </div>
 
             <div class="mt-auto pt-3">
               <button type="submit" [disabled]="!canPublish(selectedCandidature) || postLoading"
                       class="uasz-btn-primary w-full py-2 text-xs flex items-center justify-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
-                <span *ngIf="!postLoading">Publier le Contenu</span>
+                <span *ngIf="!postLoading && selectedCandidature && isElectionClosedForCandidature(selectedCandidature)">Vote Terminé — Modification Impossible</span>
+                <span *ngIf="!postLoading && (!selectedCandidature || !isElectionClosedForCandidature(selectedCandidature))">{{ hasAlreadyPublished(selectedCandidature) ? 'Mettre à jour la Publication' : 'Publier le Contenu' }}</span>
                 <lucide-icon *ngIf="postLoading" name="loader-2" class="w-4 h-4 animate-spin text-white"></lucide-icon>
               </button>
             </div>
@@ -264,14 +279,63 @@ export class CandidateDashboardComponent implements OnInit {
     this.electionService.getMyCandidatures().subscribe({
       next: (cands: Candidature[]) => {
         this.myCandidatures = cands;
-        // Auto-select approved candidature without post if available, else first
+        // Auto-select first approved & active candidature if available
         if (!this.newPost.candidatureId && cands.length > 0) {
-          const readyCand = cands.find(c => c.statut === 'APPROVED' && (!c.posts || c.posts.length === 0));
-          this.newPost.candidatureId = readyCand ? readyCand.id : cands[0].id;
+          const readyCand = cands.find(c => c.statut === 'APPROVED' && !this.isElectionClosedForCandidature(c));
+          const target = readyCand || cands[0];
+          this.selectCandidature(target);
         }
       },
       error: () => {}
     });
+  }
+
+  getElection(electionId?: number): Election | undefined {
+    if (!electionId) return undefined;
+    return this.allElections.find(e => e.id === electionId);
+  }
+
+  isElectionClosedForCandidature(c: Candidature | undefined): boolean {
+    if (!c) return false;
+    const statut = c.electionStatut || this.getElection(c.electionId)?.statut;
+    if (statut === 'CLOTURE' || statut === 'DEPOUILLEMENT' || statut === 'PUBLICATION') {
+      return true;
+    }
+    const election = this.getElection(c.electionId);
+    if (election && election.dateFin && new Date(election.dateFin).getTime() < Date.now()) {
+      return true;
+    }
+    return false;
+  }
+
+  selectCandidature(c: Candidature): void {
+    this.newPost.candidatureId = c.id;
+    if (c.posts && c.posts.length > 0) {
+      const p = c.posts[0];
+      this.newPost.titre = p.titre || '';
+      this.newPost.contenu = p.contenu || '';
+      this.newPost.imageUrl = p.afficheUrl || '';
+      this.newPost.videoEmbedUrl = p.videoEmbedUrl || '';
+    } else {
+      this.newPost.titre = '';
+      this.newPost.contenu = '';
+      this.newPost.imageUrl = '';
+      this.newPost.videoEmbedUrl = '';
+    }
+  }
+
+  onCandidatureIdChange(id: number | null): void {
+    if (!id) {
+      this.newPost.titre = '';
+      this.newPost.contenu = '';
+      this.newPost.imageUrl = '';
+      this.newPost.videoEmbedUrl = '';
+      return;
+    }
+    const cand = this.myCandidatures.find(c => c.id === id);
+    if (cand) {
+      this.selectCandidature(cand);
+    }
   }
 
   get selectedCandidature(): Candidature | undefined {
@@ -283,7 +347,7 @@ export class CandidateDashboardComponent implements OnInit {
   }
 
   canPublish(c: Candidature | undefined): boolean {
-    return !!(c && c.statut === 'APPROVED' && !this.hasAlreadyPublished(c));
+    return !!(c && c.statut === 'APPROVED' && !this.isElectionClosedForCandidature(c));
   }
 
   hasAppliedToElection(electionId?: number): boolean {
@@ -333,8 +397,7 @@ export class CandidateDashboardComponent implements OnInit {
     ).subscribe({
       next: () => {
         this.postLoading = false;
-        this.notificationService.showSuccess("Publication de campagne ajoutée avec succès !");
-        this.newPost = { candidatureId: null, titre: '', contenu: '', imageUrl: '', videoEmbedUrl: '' };
+        this.notificationService.showSuccess("Publication de campagne enregistrée avec succès !");
         this.loadData();
       },
       error: (err: any) => {

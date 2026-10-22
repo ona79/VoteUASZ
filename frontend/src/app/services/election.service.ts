@@ -56,6 +56,11 @@ export class ElectionService {
     });
   }
 
+  // Statut de vote (vérifie si l'électeur a déjà voté)
+  getVoteStatus(electionId: number): Observable<{ hasVoted: boolean; authenticated: boolean }> {
+    return this.http.get<{ hasVoted: boolean; authenticated: boolean }>(`${this.apiUrl}/vote/status/${electionId}`);
+  }
+
   // Espace Candidat
   getMyCandidatures(): Observable<Candidature[]> {
     return this.http.get<Candidature[]>(`${this.apiUrl}/candidacies/my-candidacies`);

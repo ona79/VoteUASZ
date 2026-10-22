@@ -30,11 +30,11 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard(['CANDIDAT'])]
   },
 
-  // Réclamations électorales (dépôt et suivi pour Électeurs et Candidats) - Lazy Loaded
+  // Réclamations électorales (dépôt et suivi pour Électeurs, Candidats, Commission et Admin) - Lazy Loaded
   {
     path: 'reclamations',
     loadComponent: () => import('./components/complaint/complaint.component').then(m => m.ComplaintComponent),
-    canActivate: [authGuard, roleGuard(['ELECTEUR', 'CANDIDAT'])]
+    canActivate: [authGuard, roleGuard(['ELECTEUR', 'CANDIDAT', 'SUPER_ADMIN', 'COMMISSION_ELECTORALE'])]
   },
 
   { path: '', redirectTo: 'elections', pathMatch: 'full' },

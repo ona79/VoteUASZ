@@ -87,8 +87,78 @@ import { Candidature, Election, LiveResultsDto, LiveResult, CampaignPost } from 
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8" *ngIf="election">
 
-      <!-- Ineligibility Banner / Card -->
-      <div *ngIf="election.statut === 'VOTE_OUVERT' && !eligibilityInfo.isEligible"
+      <!-- ══ VOTING HERO BANNERS (VOTE_OUVERT) ══ -->
+
+      <!-- 1. Visiteur Non Connecté -->
+      <div *ngIf="election.statut === 'VOTE_OUVERT' && !authService.isLoggedIn()"
+           class="glass-card rounded-2xl p-5 border border-blue-200 bg-blue-50/90 shadow-sm mb-6 animate-fade-in-up">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center space-x-3.5">
+            <div class="w-10 h-10 rounded-xl bg-blue-100 border border-blue-300 text-[#1d4ed8] flex items-center justify-center shrink-0 shadow-sm">
+              <lucide-icon name="vote" class="w-5 h-5 text-[#1d4ed8]"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-slate-900 mb-0.5">Le scrutin est actuellement ouvert aux votes !</h3>
+              <p class="text-xs text-slate-600 font-medium">Connectez-vous avec vos identifiants institutionnels UASZ pour voter pour votre candidat.</p>
+            </div>
+          </div>
+          <a routerLink="/login" class="uasz-btn-primary py-2 px-5 text-xs whitespace-nowrap shadow-sm shrink-0 flex items-center space-x-1.5">
+            <lucide-icon name="log-in" class="w-4 h-4"></lucide-icon>
+            <span>Se connecter pour voter</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- 2. Administrateur / Commission (Mode Supervision) -->
+      <div *ngIf="election.statut === 'VOTE_OUVERT' && authService.isLoggedIn() && isSupervisor()"
+           class="glass-card rounded-2xl p-4 border border-blue-200 bg-blue-50/70 shadow-sm mb-6 animate-fade-in-up">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-100 border border-blue-200 text-[#1d4ed8] flex items-center justify-center shrink-0">
+            <lucide-icon name="shield" class="w-4.5 h-4.5 text-[#1d4ed8]"></lucide-icon>
+          </div>
+          <div>
+            <h3 class="text-xs font-black text-slate-900">Mode Supervision Scrutin Actif</h3>
+            <p class="text-[11px] text-slate-600">Ce scrutin est en cours de vote. En tant que Super-Admin ou Commission, vous supervisez le déroulement et le dépouillement en direct.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Électeur ayant déjà voté -->
+      <div *ngIf="election.statut === 'VOTE_OUVERT' && authService.isLoggedIn() && hasAlreadyVoted"
+           class="glass-card rounded-2xl p-4 border border-emerald-200 bg-emerald-50/90 shadow-sm mb-6 animate-fade-in-up">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-emerald-100 border border-emerald-300 text-[#047857] flex items-center justify-center shrink-0 shadow-sm">
+            <lucide-icon name="check-circle-2" class="w-5 h-5 text-[#047857]"></lucide-icon>
+          </div>
+          <div>
+            <h3 class="text-xs font-black text-emerald-900">Votre vote a bien été enregistré !</h3>
+            <p class="text-[11px] text-emerald-700">Votre bulletin anonyme est scellé cryptographiquement dans l'urne numérique (émargement validé). Merci de votre participation !</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Électeur Éligible Prêt à Voter -->
+      <div *ngIf="election.statut === 'VOTE_OUVERT' && authService.isLoggedIn() && !isSupervisor() && !hasAlreadyVoted && eligibilityInfo.isEligible"
+           class="glass-card rounded-2xl p-5 border border-emerald-200 bg-emerald-50/90 shadow-sm mb-6 animate-fade-in-up">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center space-x-3.5">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-300 text-[#047857] flex items-center justify-center shrink-0 shadow-sm">
+              <lucide-icon name="vote" class="w-5 h-5 text-[#047857]"></lucide-icon>
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-emerald-950 mb-0.5">Scrutin Ouvert : Vous êtes éligible pour voter !</h3>
+              <p class="text-xs text-emerald-800 font-medium">Sélectionnez votre candidat ci-dessous. Le vote est sécurisé par un code OTP à usage unique envoyé sur votre e-mail.</p>
+            </div>
+          </div>
+          <button (click)="scrollToCandidates()" type="button" class="uasz-btn-primary py-2 px-5 text-xs whitespace-nowrap shadow-sm shrink-0 flex items-center space-x-1.5 cursor-pointer">
+            <lucide-icon name="arrow-down" class="w-4 h-4"></lucide-icon>
+            <span>Choisir mon candidat</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 5. Électeur Non Éligible (Profil Incompatible) -->
+      <div *ngIf="election.statut === 'VOTE_OUVERT' && authService.isLoggedIn() && !isSupervisor() && !hasAlreadyVoted && !eligibilityInfo.isEligible"
            class="glass-card rounded-2xl p-5 border border-amber-200 bg-amber-50/80 shadow-sm mb-6 animate-fade-in-up">
         <div class="flex items-start space-x-3.5">
           <div class="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 text-amber-700 flex items-center justify-center shrink-0 shadow-sm mt-0.5">
@@ -169,7 +239,7 @@ import { Candidature, Election, LiveResultsDto, LiveResult, CampaignPost } from 
       </div>
 
       <!-- Candidates List -->
-      <div class="flex items-center justify-between mb-3">
+      <div id="candidates-section" class="flex items-center justify-between mb-3 scroll-mt-6">
         <h2 class="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
           <lucide-icon name="users" class="w-5 h-5 text-[#047857] shrink-0"></lucide-icon>
           <span>Candidats &amp; Programmes</span>
@@ -339,13 +409,42 @@ import { Candidature, Election, LiveResultsDto, LiveResult, CampaignPost } from 
             </div><!-- /séparateur -->
           </div><!-- /pl-1 -->
 
-          <!-- Bouton voter (VOTE_OUVERT + éligible uniquement) -->
-          <div class="mt-4 pt-3 border-t border-slate-100 pl-1" *ngIf="election.statut === 'VOTE_OUVERT' && eligibilityInfo.isEligible">
-            <button (click)="openVoteModal(c)"
+          <!-- Action de Vote (VOTE_OUVERT) -->
+          <div class="mt-4 pt-3 border-t border-slate-100 pl-1" *ngIf="election.statut === 'VOTE_OUVERT'">
+            <!-- Non connecté -->
+            <a *ngIf="!authService.isLoggedIn()"
+               routerLink="/login"
+               class="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-300 flex items-center justify-center space-x-1.5 transition-colors">
+              <lucide-icon name="log-in" class="w-3.5 h-3.5 text-slate-600 shrink-0"></lucide-icon>
+              <span>Se connecter pour voter</span>
+            </a>
+
+            <!-- Déjà voté -->
+            <div *ngIf="authService.isLoggedIn() && hasAlreadyVoted"
+                 class="w-full py-2 px-3 rounded-xl bg-emerald-50 text-emerald-800 font-bold text-xs border border-emerald-200 flex items-center justify-center space-x-1.5">
+              <lucide-icon name="check-circle-2" class="w-3.5 h-3.5 text-[#047857] shrink-0"></lucide-icon>
+              <span>Vote déjà enregistré</span>
+            </div>
+
+            <!-- Électeur éligible et n'ayant pas encore voté -->
+            <button *ngIf="authService.isLoggedIn() && !hasAlreadyVoted && eligibilityInfo.isEligible && !isSupervisor()"
+                    (click)="openVoteModal(c)"
                     class="uasz-btn-primary w-full py-2 text-xs flex items-center justify-center space-x-1.5 shadow-sm">
               <lucide-icon name="vote" class="w-4 h-4 shrink-0"></lucide-icon>
-              <span>Choisir {{ getCandidatDisplayName(c) }}</span>
+              <span>Voter pour {{ getCandidatDisplayName(c) }}</span>
             </button>
+
+            <!-- Super-Admin / Commission -->
+            <div *ngIf="authService.isLoggedIn() && isSupervisor()"
+                 class="w-full py-1.5 px-2 rounded-lg bg-blue-50 text-[#1d4ed8] font-bold text-[10px] text-center border border-blue-200">
+              Mode Supervision (Scrutin ouvert)
+            </div>
+
+            <!-- Non éligible -->
+            <div *ngIf="authService.isLoggedIn() && !hasAlreadyVoted && !eligibilityInfo.isEligible && !isSupervisor()"
+                 class="w-full py-1.5 px-2 rounded-lg bg-amber-50 text-amber-700 font-bold text-[10px] text-center border border-amber-200">
+              Non inscrit sur ce scrutin
+            </div>
           </div>
         </div>
       </div>
@@ -569,21 +668,35 @@ export class ElectionDetailComponent implements OnInit, OnDestroy {
   private electionService = inject(ElectionService);
   private voteService = inject(VoteService);
   private wsService = inject(WebSocketService);
-  private authService = inject(AuthService);
+  authService = inject(AuthService);
   private sanitizer = inject(DomSanitizer);
   private notificationService = inject(NotificationService);
+
+  hasAlreadyVoted = false;
+
+  isSupervisor(): boolean {
+    const user = this.authService.currentUser();
+    return !!(user && (user.role === 'SUPER_ADMIN' || user.role === 'COMMISSION_ELECTORALE'));
+  }
+
+  scrollToCandidates(): void {
+    const el = document.getElementById('candidates-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
 
   get candidaturesEmptyTitle(): string {
     if (!this.election) return 'Aucune candidature publiée';
     return this.election.statut === 'VOTE_OUVERT'
-      ? "Le vote n'est pas encore disponible : aucune candidature approuvée"
+      ? "Aucun candidat validé pour ce scrutin"
       : "Aucune candidature publiée";
   }
 
   get candidaturesEmptySubtitle(): string {
     if (!this.election) return "Aucun candidat n'a encore publié son programme.";
     return this.election.statut === 'VOTE_OUVERT'
-      ? "Bien que vous soyez éligible et que le scrutin soit ouvert, aucun candidat n'a encore été validé pour cette élection."
+      ? "Le scrutin est ouvert aux votes mais aucun candidat n'a encore été validé par la Commission Électorale."
       : "Aucun candidat n'a encore publié son programme.";
   }
 
@@ -711,6 +824,15 @@ export class ElectionDetailComponent implements OnInit, OnDestroy {
       next: (data) => this.liveResults = data,
       error: (err) => console.error('WebSocket / Live initial fetch error', err)
     });
+
+    if (this.authService.isLoggedIn()) {
+      this.electionService.getVoteStatus(this.electionId).subscribe({
+        next: (status) => {
+          this.hasAlreadyVoted = status.hasVoted;
+        },
+        error: () => {}
+      });
+    }
   }
 
   openVoteModal(c: Candidature): void {
@@ -769,6 +891,7 @@ export class ElectionDetailComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.otpLoading = false;
         this.ballotHash = res.ballotHash;
+        this.hasAlreadyVoted = true;
         this.voteStep = 3;
       },
       error: (err) => {

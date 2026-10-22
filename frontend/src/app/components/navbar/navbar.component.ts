@@ -31,13 +31,14 @@ import { AuthService } from '../../services/auth.service';
 
       <!-- Navigation Links -->
       <div class="flex-1 overflow-y-auto p-3 space-y-1.5">
-        <ng-container *ngIf="authService.isLoggedIn()">
-          <a routerLink="/elections" routerLinkActive="bg-emerald-50 text-[#047857] font-bold border-emerald-200"
-             class="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-[#047857] hover:bg-emerald-50/60 transition border border-transparent">
-            <lucide-icon name="vote" class="w-4 h-4 shrink-0"></lucide-icon>
-            <span>Élections</span>
-          </a>
+        <!-- Élections : Toujours visible pour tous (public et connecté) -->
+        <a routerLink="/elections" routerLinkActive="bg-emerald-50 text-[#047857] font-bold border-emerald-200"
+           class="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-[#047857] hover:bg-emerald-50/60 transition border border-transparent">
+          <lucide-icon name="vote" class="w-4 h-4 shrink-0"></lucide-icon>
+          <span>Élections</span>
+        </a>
 
+        <ng-container *ngIf="authService.isLoggedIn()">
           <a *ngIf="authService.hasRole('SUPER_ADMIN')" routerLink="/admin"
              routerLinkActive="bg-emerald-50 text-[#047857] font-bold border-emerald-200"
              class="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-[#047857] hover:bg-emerald-50/60 transition border border-transparent">
@@ -59,7 +60,7 @@ import { AuthService } from '../../services/auth.service';
             <span>Espace Candidat</span>
           </a>
 
-          <a *ngIf="authService.hasRole('ELECTEUR') || authService.hasRole('CANDIDAT')"
+          <a *ngIf="authService.hasRole('ELECTEUR') || authService.hasRole('CANDIDAT') || authService.hasRole('SUPER_ADMIN') || authService.hasRole('COMMISSION_ELECTORALE')"
              routerLink="/reclamations"
              routerLinkActive="bg-emerald-50 text-[#047857] font-bold border-emerald-200"
              class="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-[#047857] hover:bg-emerald-50/60 transition border border-transparent">

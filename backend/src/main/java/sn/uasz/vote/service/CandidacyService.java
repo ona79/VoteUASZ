@@ -112,7 +112,9 @@ public class CandidacyService {
 
         return CandidatureDto.builder()
                 .id(c.getId())
-                .electionId(c.getElection().getId())
+                .electionId(c.getElection() != null ? c.getElection().getId() : null)
+                .electionStatut(c.getElection() != null ? c.getElection().getStatut() : null)
+                .electionTitre(c.getElection() != null ? c.getElection().getTitre() : null)
                 .candidatId(c.getCandidat() != null ? c.getCandidat().getId() : null)
                 .candidatNomComplet(realNomComplet)
                 .candidatNom(c.getCandidat() != null ? c.getCandidat().getNom() : null)

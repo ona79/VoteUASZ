@@ -86,4 +86,13 @@ public class VoteController {
         );
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/status/{electionId}")
+    public ResponseEntity<Map<String, Object>> getVotingStatus(@PathVariable Long electionId, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
+            return ResponseEntity.ok(Map.of("hasVoted", false, "authenticated", false));
+        }
+        boolean hasVoted = votingService.hasUserVoted(auth.getName(), electionId);
+        return ResponseEntity.ok(Map.of("hasVoted", hasVoted, "authenticated", true));
+    }
 }

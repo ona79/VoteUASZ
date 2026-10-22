@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import sn.uasz.vote.enums.CandidacyStatus;
+import sn.uasz.vote.enums.ElectionStatus;
 
 @Data
 @NoArgsConstructor
@@ -13,6 +14,8 @@ import sn.uasz.vote.enums.CandidacyStatus;
 public class CandidatureDto {
     private Long id;
     private Long electionId;
+    private ElectionStatus electionStatut;
+    private String electionTitre;
     private Long candidatId;
     private String candidatNomComplet;
     private String candidatNom;
