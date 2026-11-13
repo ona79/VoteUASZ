@@ -17,5 +17,7 @@ app:
     expiration-minutes: 5
   crypto:
     secret-key: TestCryptoSecretKeyForUnitTestAES256!
+  audit:
+    ip-salt: TestAuditIpSaltForUnitTest!
   default-electeur-password: TestElecteurDefaultPassword2026!
   default-candidat-password: TestCandidatDefaultPassword2026!

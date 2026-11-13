@@ -90,4 +90,41 @@ class CryptoServiceTest {
         assertFalse(encrypted.contains(userId),
                 "Le payload chiffré ne doit pas contenir l'ID de l'électeur");
     }
+
+    // --- LOT B : Validation de la clé CRYPTO_SECRET ---
+
+    @Test
+    @DisplayName("LOT B — validateAndInitKey() échoue si CRYPTO_SECRET < 32 caractères")
+    void validateAndInitKey_throwsIfSecretTooShort() {
+        CryptoService service = new CryptoService();
+        ReflectionTestUtils.setField(service, "secretKey", "court"); // 5 caractères seulement
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                service::validateAndInitKey,
+                "L'application doit refuser de démarrer si CRYPTO_SECRET < 32 caractères");
+        assertTrue(ex.getMessage().contains("32"),
+                "Le message d'erreur doit mentionner la longueur minimale requise");
+    }
+
+    @Test
+    @DisplayName("LOT B — validateAndInitKey() échoue si CRYPTO_SECRET est null")
+    void validateAndInitKey_throwsIfSecretIsNull() {
+        CryptoService service = new CryptoService();
+        ReflectionTestUtils.setField(service, "secretKey", null);
+
+        assertThrows(IllegalStateException.class,
+                service::validateAndInitKey,
+                "L'application doit refuser de démarrer si CRYPTO_SECRET est null");
+    }
+
+    @Test
+    @DisplayName("LOT B — validateAndInitKey() réussit avec une clé d'exactement 32 caractères")
+    void validateAndInitKey_succeedsWithMinimumLength() {
+        CryptoService service = new CryptoService();
+        ReflectionTestUtils.setField(service, "secretKey", "ExactlyThirtyTwoCharsLong!!!!!!");
+
+        assertDoesNotThrow(service::validateAndInitKey,
+                "Une clé de 32 caractères exactement doit être acceptée");
+    }
 }
+
