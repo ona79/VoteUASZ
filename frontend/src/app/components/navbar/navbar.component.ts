@@ -20,7 +20,7 @@ import { AuthService } from '../../services/auth.service';
       <div class="p-5 border-b border-slate-100">
         <a routerLink="/" class="flex items-center space-x-3">
           <div class="w-10 h-10 rounded-xl bg-white p-0.5 flex items-center justify-center shadow-md border border-slate-100 shrink-0 overflow-hidden">
-            <img src="assets/logo_vote_uasz.PNG" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
+            <img src="assets/logo_vote_uasz.webp" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
           </div>
           <div class="flex flex-col">
             <span class="font-black text-lg tracking-tight text-slate-900 leading-none">Vote<span class="text-[#047857]">UASZ</span></span>

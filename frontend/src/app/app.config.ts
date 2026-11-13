@@ -78,7 +78,7 @@ export const appConfig: ApplicationConfig = {
         ArrowDown
     })),
     provideServiceWorker('ngsw-worker.js', {
-        enabled: false,
+        enabled: !isDevMode(),
         registrationStrategy: 'registerWhenStable:30000'
     })
 ]

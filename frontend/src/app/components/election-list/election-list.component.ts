@@ -25,7 +25,7 @@ import { ElectionFilterComponent } from '../shared/election-filter/election-filt
       <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-5 md:p-8">
         <div>
           <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-emerald-100 text-[11px] font-bold mb-3 border border-white/20">
-            <img src="assets/logo_vote_uasz.PNG" alt="Vote UASZ" class="w-4 h-4 object-contain rounded-sm" />
+            <img src="assets/logo_vote_uasz.webp" alt="Vote UASZ" class="w-4 h-4 object-contain rounded-sm" />
             <span>Université Assane Seck</span>
           </div>
           <h1 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight mb-2 text-white">Scrutins Officiels</h1>

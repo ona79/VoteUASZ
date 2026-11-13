@@ -7,26 +7,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="Plateforme mobile-first de vote électronique sécurisé pour l'Université Assane Seck de Ziguinchor (UASZ).">
   <meta name="theme-color" content="#047857">
-  <link rel="icon" type="image/png" href="assets/logo_vote_uasz.PNG">
-  <link rel="apple-touch-icon" href="assets/logo_vote_uasz.PNG">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+  <link rel="icon" type="image/webp" href="assets/logo_vote_uasz.webp">
+  <link rel="apple-touch-icon" href="assets/logo_vote_uasz.webp">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#047857">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased font-sans">
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (let registration of registrations) {
-          registration.unregister();
-        }
-      });
-    }
-    if ('caches' in window) {
-      caches.keys().then(function(names) {
-        for (let name of names) caches.delete(name);
-      });
-    }
-  </script>
   <app-root></app-root>
   <noscript>Please enable JavaScript to continue using this application.</noscript>
 </body>
