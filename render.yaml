@@ -20,7 +20,7 @@ services:
       - key: SPRING_DATASOURCE_URL
         fromDatabase:
           name: voteuasz-db
-          property: connectionString
+          property: jdbcConnectionString
       - key: SPRING_DATASOURCE_USERNAME
         fromDatabase:
           name: voteuasz-db
