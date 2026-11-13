@@ -34,6 +34,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final org.springframework.core.env.Environment environment;
 
     @Value("${app.cors.allowed-origins:http://localhost:4200,http://localhost:8080}")
     private List<String> allowedOrigins;
@@ -56,12 +57,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Endpoints publics & ressources statiques Frontend
-                        .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/assets/**", "/favicon.ico", "/*.png", "/*.svg", "/*.webmanifest", "/*.json").permitAll()
+                        .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/assets/**", "/favicon.ico", "/*.png", "/*.svg", "/*.webp", "/*.webmanifest", "/*.json").permitAll()
                         .requestMatchers("/api/v1/auth/**", "/ws/**", "/h2-console/**", "/swagger-ui/**", "/api-docs/**", "/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/elections", "/api/v1/elections/**", "/api/v1/results/**", "/api/v1/candidacies/**", "/api/v1/candidatures/**", "/api/v1/campaigns/**", "/api/v1/vote/status/**").permitAll()
-                        // Création & modification des élections — SUPER_ADMIN uniquement
+                        .requestMatchers(HttpMethod.GET, "/api/v1/elections", "/api/v1/elections/**", "/api/v1/campaigns/**", "/api/v1/candidacies/*/posts", "/api/v1/candidatures/*/posts", "/api/v1/vote/status/**").permitAll()
+                        // Création, modification & suppression des élections — SUPER_ADMIN uniquement
                         .requestMatchers(HttpMethod.POST, "/api/v1/elections", "/api/v1/elections/**").hasRole("SUPER_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/elections", "/api/v1/elections/**").hasRole("SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/elections/**").hasRole("SUPER_ADMIN")
                         // Publications de campagne — CANDIDAT et SUPER_ADMIN
                         .requestMatchers(HttpMethod.POST, "/api/v1/campaigns", "/api/v1/candidatures/*/posts", "/api/v1/candidacies/*/posts").hasAnyRole("SUPER_ADMIN", "CANDIDAT")
                         // Endpoint CSV multipart — SUPER_ADMIN uniquement (doit être avant anyRequest)
@@ -93,11 +95,27 @@ public class SecurityConfig {
                             response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentification requise\"}");
                         })
                 )
-                .headers(headers -> headers.frameOptions(frame -> frame.disable())); // Pour la console H2
+                .headers(headers -> {
+                    if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("dev"))) {
+                        headers.frameOptions(frame -> frame.disable()); // Console H2 en dev uniquement
+                    } else {
+                        headers.frameOptions(frame -> frame.deny());
+                    }
+                    headers.contentTypeOptions(Customizer.withDefaults()); // X-Content-Type-Options: nosniff
+                    headers.referrerPolicy(ref -> ref.policy(
+                            org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN
+                    ));
+                });
 
+        http.addFilterBefore(rateLimitingFilter(), UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public RateLimitingFilter rateLimitingFilter() {
+        return new RateLimitingFilter();
     }
 
     @Bean

@@ -22,7 +22,7 @@ import { ElectionFilterComponent } from '../shared/election-filter/election-filt
 
       <div class="relative z-10 flex flex-col items-center justify-center p-5 md:p-8 text-center">
         <div class="w-14 h-14 rounded-2xl bg-white p-1 flex items-center justify-center shadow-lg mb-3 border border-white/20 overflow-hidden">
-          <img src="assets/logo_vote_uasz.PNG" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
+          <img src="assets/logo_vote_uasz.webp" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
         </div>
         <h1 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white mb-2 leading-tight">Commission Électorale</h1>
         <p class="text-xs md:text-sm text-emerald-50 max-w-2xl font-medium leading-relaxed">
@@ -88,7 +88,7 @@ import { ElectionFilterComponent } from '../shared/election-filter/election-filt
             <div class="mb-3.5 pl-1.5">
               <div class="flex justify-between items-start mb-2.5">
                 <div class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
-                  <img *ngIf="c.photoUrl" [src]="c.photoUrl" class="w-full h-full object-cover"/>
+                  <img *ngIf="c.photoUrl" [src]="c.photoUrl" loading="lazy" class="w-full h-full object-cover"/>
                   <lucide-icon *ngIf="!c.photoUrl" name="user" class="w-4 h-4 text-slate-400"></lucide-icon>
                 </div>
                 <span [class]="getStatusClass(c.statut)" class="text-[9px] px-2 py-0.5 rounded-md font-black uppercase tracking-wider border">

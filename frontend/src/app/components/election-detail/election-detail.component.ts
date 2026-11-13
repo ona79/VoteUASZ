@@ -1,8 +1,30 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import {
+  Chart,
+  BarController,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  DoughnutController,
+  ArcElement,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+Chart.register(
+  BarController,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  DoughnutController,
+  ArcElement,
+  Tooltip,
+  Legend
+);
 import {
   LucideAngularModule,
   AlertTriangle,
@@ -50,7 +72,7 @@ import { Candidature, Election, LiveResultsDto, LiveResult, CampaignPost } from 
         <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div class="flex-1 text-center md:text-left w-full flex flex-col items-center md:items-start">
             <div class="w-14 h-14 rounded-2xl bg-white p-1 flex items-center justify-center shadow-lg mb-3 mx-auto md:mx-0 border border-white/20 overflow-hidden">
-              <img src="assets/logo_vote_uasz.PNG" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
+              <img src="assets/logo_vote_uasz.webp" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
             </div>
             
             <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white mb-2 leading-tight">{{ election.titre }}</h1>
@@ -210,7 +232,27 @@ import { Candidature, Election, LiveResultsDto, LiveResult, CampaignPost } from 
           </div>
         </div>
 
-        <!-- Results grid when data is available -->
+        <!-- Chart.js visualization (Bar / Doughnut) + HTML bars fallback -->
+        <div *ngIf="resultsList.length > 0" class="px-4 pt-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Graphique de dépouillement</span>
+            <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-[11px] font-bold">
+              <button type="button" (click)="setChartType('bar')"
+                      [class]="chartType === 'bar' ? 'px-2.5 py-1 rounded-md bg-[#047857] text-white' : 'px-2.5 py-1 text-slate-600'">
+                Barres
+              </button>
+              <button type="button" (click)="setChartType('doughnut')"
+                      [class]="chartType === 'doughnut' ? 'px-2.5 py-1 rounded-md bg-[#047857] text-white' : 'px-2.5 py-1 text-slate-600'">
+                Camembert
+              </button>
+            </div>
+          </div>
+          <div class="relative h-56 w-full bg-slate-50/60 rounded-xl border border-slate-200 p-3">
+            <canvas #resultsChartCanvas></canvas>
+          </div>
+        </div>
+
+        <!-- Results grid when data is available (HTML fallback) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4"
              *ngIf="resultsList.length > 0">
           <div *ngFor="let item of resultsList" class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 hover:border-emerald-200 transition-colors group">
@@ -278,6 +320,7 @@ import { Candidature, Election, LiveResultsDto, LiveResult, CampaignPost } from 
                 <!-- Photo réelle (Candidature.photoUrl) -->
                 <img *ngIf="c.photoUrl && !isImageFailed(c.photoUrl)"
                      [src]="c.photoUrl"
+                     loading="lazy"
                      (error)="onImgError($event, c.photoUrl)"
                      alt="Photo candidat"
                      class="w-full h-full object-cover" />
@@ -372,7 +415,8 @@ import { Candidature, Election, LiveResultsDto, LiveResult, CampaignPost } from 
                       <div *ngIf="activeVideoPostId !== post.id"
                            (click)="playVideo(post.id)"
                            class="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-200 bg-slate-900 group/vid cursor-pointer">
-                        <img [src]="getYoutubeThumbnail(post.videoEmbedUrl) || 'assets/logo_vote_uasz.PNG'"
+                        <img [src]="getYoutubeThumbnail(post.videoEmbedUrl) || 'assets/logo_vote_uasz.webp'"
+                             loading="lazy"
                              class="w-full h-full object-cover opacity-80 group-hover/vid:opacity-100 transition-opacity duration-300" />
                         <div class="absolute inset-0 flex items-center justify-center bg-black/25 group-hover/vid:bg-black/10 transition-colors">
                           <div class="w-9 h-9 rounded-full bg-[#047857] flex items-center justify-center shadow-lg group-hover/vid:scale-110 transition-transform">
@@ -778,54 +822,112 @@ export class ElectionDetailComponent implements OnInit, OnDestroy {
     return { isEligible: true, reason: '', requiredProfile, userProfile };
   }
 
+  @ViewChild('resultsChartCanvas') resultsChartCanvas?: ElementRef<HTMLCanvasElement>;
+  chartType: 'bar' | 'doughnut' = 'bar';
+  private resultsChart?: Chart;
+
   ngOnInit(): void {
     this.electionId = Number(this.route.snapshot.paramMap.get('id'));
     this.fetchData();
 
-    // Connect WebSocket for live results
-    this.wsService.connect(this.electionId);
     this.wsService.results$.subscribe((results) => {
-      if (results) this.liveResults = results;
+      if (results) {
+        this.liveResults = results;
+        setTimeout(() => this.renderResultsChart());
+      }
     });
   }
 
   ngOnDestroy(): void {
     this.wsService.disconnect();
+    this.resultsChart?.destroy();
+  }
+
+  setChartType(type: 'bar' | 'doughnut'): void {
+    this.chartType = type;
+    setTimeout(() => this.renderResultsChart());
+  }
+
+  renderResultsChart(): void {
+    const canvas = this.resultsChartCanvas?.nativeElement;
+    const list = this.resultsList;
+    if (!canvas || list.length === 0) return;
+
+    const labels = list.map(r => r.nomCandidat || r.nomListe || 'Candidat');
+    const data = list.map(r => r.voteCount);
+    const palette = ['#047857', '#1d4ed8', '#d97706', '#7c3aed', '#dc2626', '#0891b2'];
+    const colors = labels.map((_, i) => palette[i % palette.length]);
+
+    this.resultsChart?.destroy();
+    this.resultsChart = new Chart(canvas, {
+      type: this.chartType,
+      data: {
+        labels,
+        datasets: [{
+          label: 'Suffrages',
+          data,
+          backgroundColor: colors,
+          borderRadius: this.chartType === 'bar' ? 8 : 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: this.chartType === 'doughnut', position: 'bottom' }
+        },
+        scales: this.chartType === 'bar' ? {
+          y: { beginAtZero: true, ticks: { precision: 0 } }
+        } : undefined
+      }
+    });
+  }
+
+  private canViewLiveResults(statut?: string): boolean {
+    if (!this.authService.isLoggedIn()) return false;
+    if (this.isSupervisor()) return true;
+    return statut === 'DEPOUILLEMENT' || statut === 'PUBLICATION' || statut === 'CLOTURE';
   }
 
   fetchData(): void {
     this.electionService.getElection(this.electionId).subscribe({
-      next: (data) => this.election = data,
+      next: (data) => {
+        this.election = data;
+        if (this.canViewLiveResults(data.statut)) {
+          this.wsService.connect(this.electionId);
+          this.electionService.getLiveResults(this.electionId).subscribe({
+            next: (res) => {
+              this.liveResults = res;
+              setTimeout(() => this.renderResultsChart());
+            },
+            error: (err) => console.error('WebSocket / Live initial fetch error', err)
+          });
+        }
+      },
       error: () => this.notificationService.showError("Scrutin introuvable.")
     });
 
-    this.electionService.getCandidatures(this.electionId).subscribe({
-      next: (data) => {
-        this.candidatures = data;
-        // Charger les publications de campagne de l'élection
-        this.electionService.getCampaignPostsByElection(this.electionId).subscribe({
-          next: (posts) => {
-            if (posts && posts.length > 0 && this.candidatures) {
-              this.candidatures.forEach(c => {
-                const cPosts = posts.filter(p => p.candidatureId === c.id);
-                if (cPosts.length > 0) {
-                  c.posts = cPosts;
-                }
-              });
-            }
-          },
-          error: (err) => console.error('Erreur lors du chargement des posts de campagne:', err)
-        });
-      },
-      error: () => this.notificationService.showError("Erreur lors de la récupération des candidatures.")
-    });
-
-    this.electionService.getLiveResults(this.electionId).subscribe({
-      next: (data) => this.liveResults = data,
-      error: (err) => console.error('WebSocket / Live initial fetch error', err)
-    });
-
     if (this.authService.isLoggedIn()) {
+      this.electionService.getCandidatures(this.electionId).subscribe({
+        next: (data) => {
+          this.candidatures = data;
+          this.electionService.getCampaignPostsByElection(this.electionId).subscribe({
+            next: (posts) => {
+              if (posts && posts.length > 0 && this.candidatures) {
+                this.candidatures.forEach(c => {
+                  const cPosts = posts.filter(p => p.candidatureId === c.id);
+                  if (cPosts.length > 0) {
+                    c.posts = cPosts;
+                  }
+                });
+              }
+            },
+            error: (err) => console.error('Erreur lors du chargement des posts de campagne:', err)
+          });
+        },
+        error: () => this.notificationService.showError("Erreur lors de la récupération des candidatures.")
+      });
+
       this.electionService.getVoteStatus(this.electionId).subscribe({
         next: (status) => {
           this.hasAlreadyVoted = status.hasVoted;

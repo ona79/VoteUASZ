@@ -1,13 +1,17 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login.component';
-import { ElectionListComponent } from './components/election-list/election-list.component';
-import { ElectionDetailComponent } from './components/election-detail/election-detail.component';
 import { authGuard, roleGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
-  { path: 'elections', component: ElectionListComponent },
-  { path: 'elections/:id', component: ElectionDetailComponent },
+  {
+    path: 'elections',
+    loadComponent: () => import('./components/election-list/election-list.component').then(m => m.ElectionListComponent)
+  },
+  {
+    path: 'elections/:id',
+    loadComponent: () => import('./components/election-detail/election-detail.component').then(m => m.ElectionDetailComponent)
+  },
 
   // Espace Super-Admin (RBAC: SUPER_ADMIN) - Lazy Loaded
   {

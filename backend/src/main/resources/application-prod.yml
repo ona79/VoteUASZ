@@ -1,3 +1,8 @@
+server:
+  # Résout request.getRemoteAddr() depuis X-Forwarded-For injecté par Render (proxy de confiance).
+  # Empêche le spoofing client : seul l'IP ajoutée par le proxy est utilisée.
+  forward-headers-strategy: native
+
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL}
@@ -22,4 +27,4 @@ logging:
   level:
     org:
       springframework:
-        security: DEBUG
+        security: WARN

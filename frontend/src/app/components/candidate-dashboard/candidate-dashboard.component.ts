@@ -21,7 +21,7 @@ import { Election, Candidature, CampaignPost } from '../../models/vote.models';
 
       <div class="relative z-10 flex flex-col items-center justify-center p-5 md:p-8 text-center">
         <div class="w-14 h-14 rounded-2xl bg-white p-1 flex items-center justify-center shadow-lg mb-3 border border-white/20 overflow-hidden">
-          <img src="assets/logo_vote_uasz.PNG" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
+          <img src="assets/logo_vote_uasz.webp" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
         </div>
         <h1 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white mb-2 leading-tight">Espace Campagne Candidat</h1>
         <p class="text-xs md:text-sm text-emerald-50 max-w-2xl font-medium leading-relaxed">

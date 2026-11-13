@@ -39,6 +39,8 @@ public class ElectionService {
 
     @Transactional
     public ElectionDto createElection(ElectionDto dto) {
+        validateDateRange(dto.getDateDebut(), dto.getDateFin());
+
         Election election = Election.builder()
                 .titre(dto.getTitre())
                 .description(dto.getDescription())
@@ -53,6 +55,45 @@ public class ElectionService {
 
         Election saved = electionRepository.save(election);
         return mapToDto(saved);
+    }
+
+    @Transactional
+    public ElectionDto updateElection(Long electionId, ElectionDto dto) {
+        Election election = electionRepository.findById(electionId)
+                .orElseThrow(() -> new IllegalArgumentException("Élection non trouvée ID: " + electionId));
+
+        if (election.getStatut() != ElectionStatus.CONFIGURATION) {
+            throw new IllegalStateException("La modification d'une élection n'est autorisée qu'en phase CONFIGURATION.");
+        }
+        validateDateRange(dto.getDateDebut(), dto.getDateFin());
+
+        election.setTitre(dto.getTitre());
+        election.setDescription(dto.getDescription());
+        election.setType(dto.getType());
+        election.setDateDebut(dto.getDateDebut());
+        election.setDateFin(dto.getDateFin());
+        election.setTargetUfr(dto.getTargetUfr());
+        election.setTargetFiliere(dto.getTargetFiliere());
+        election.setTargetNiveau(dto.getTargetNiveau());
+
+        return mapToDto(electionRepository.save(election));
+    }
+
+    @Transactional
+    public void deleteElection(Long electionId) {
+        Election election = electionRepository.findById(electionId)
+                .orElseThrow(() -> new IllegalArgumentException("Élection non trouvée ID: " + electionId));
+
+        if (election.getStatut() != ElectionStatus.CONFIGURATION) {
+            throw new IllegalStateException("La suppression d'une élection n'est autorisée qu'en phase CONFIGURATION.");
+        }
+        electionRepository.delete(election);
+    }
+
+    private void validateDateRange(java.time.LocalDateTime dateDebut, java.time.LocalDateTime dateFin) {
+        if (dateDebut == null || dateFin == null || !dateDebut.isBefore(dateFin)) {
+            throw new IllegalArgumentException("La date de début doit être strictement antérieure à la date de fin.");
+        }
     }
 
     @Transactional
@@ -103,17 +144,9 @@ public class ElectionService {
                 .orElseThrow(() -> new IllegalArgumentException("Élection non trouvée ID: " + id));
     }
 
-    public boolean isUserEligible(User user, Election election) {
-        if (user == null || election == null || !user.isActive()) return false;
-
-        return switch (election.getType()) {
-            case DELEGUE -> (election.getTargetUfr() == null || election.getTargetUfr().equalsIgnoreCase(user.getUfr())) &&
-                            (election.getTargetFiliere() == null || election.getTargetFiliere().equalsIgnoreCase(user.getFiliere())) &&
-                            (election.getTargetNiveau() == null || election.getTargetNiveau().equalsIgnoreCase(user.getNiveau()));
-            case DUFR -> (election.getTargetUfr() == null || election.getTargetUfr().equalsIgnoreCase(user.getUfr()));
-            case VICE_RECTEUR -> true; // Tous les membres actifs de l'UASZ
-        };
-    }
+    // NB : la vérification d'éligibilité est centralisée dans EligibilityService (ancienne
+    // méthode isUserEligible() supprimée car dupliquée et incomplète : elle ignorait la
+    // restriction ETUDIANT des scrutins DELEGUE).
 
     public ElectionDto mapToDto(Election election) {
         return ElectionDto.builder()
