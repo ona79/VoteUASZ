@@ -1,5 +1,7 @@
 package sn.uasz.vote.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentification", description = "Connexion JWT et réinitialisation de mot de passe")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -26,6 +29,7 @@ public class AuthController {
     private final UserRepository userRepository;
 
     @PostMapping("/login")
+    @Operation(summary = "Authentifier un utilisateur par matricule ou e-mail et retourner un JWT")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         String identifier = request.getMatriculeOrEmail();
         User user = userRepository.findByMatricule(identifier)
@@ -88,6 +92,7 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
+    @Operation(summary = "Demander la réinitialisation du mot de passe (réponse neutre)")
     public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> payload) {
         String emailOrMatricule = payload != null ? payload.get("identifier") : null;
         if (emailOrMatricule != null && !emailOrMatricule.isBlank()) {

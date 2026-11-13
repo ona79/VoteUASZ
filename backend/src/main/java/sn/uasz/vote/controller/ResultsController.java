@@ -1,5 +1,7 @@
 package sn.uasz.vote.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -20,6 +22,7 @@ import java.io.ByteArrayInputStream;
 @RestController
 @RequestMapping("/api/v1/results")
 @RequiredArgsConstructor
+@Tag(name = "Résultats & PV", description = "Consultation des résultats en direct et export PDF du procès-verbal")
 public class ResultsController {
 
     private final VotingService votingService;
@@ -27,12 +30,14 @@ public class ResultsController {
     private final ElectionService electionService;
 
     @GetMapping("/{electionId}")
+    @Operation(summary = "Obtenir les résultats d'une élection (supervision avant dépouillement, authentifiés ensuite)")
     public ResponseEntity<LiveResultsDto> getLiveResults(@PathVariable Long electionId, Authentication auth) {
         assertResultsAccessible(electionId, auth);
         return ResponseEntity.ok(votingService.getLiveResults(electionId));
     }
 
     @GetMapping("/{electionId}/export-pdf")
+    @Operation(summary = "Télécharger le procès-verbal officiel au format PDF")
     public ResponseEntity<InputStreamResource> exportPdfReport(@PathVariable Long electionId, Authentication auth) {
         assertResultsAccessible(electionId, auth);
         ByteArrayInputStream pdfStream = pdfReportService.generateElectionPdfReport(electionId);

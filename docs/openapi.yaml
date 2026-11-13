@@ -27,9 +27,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [matricule, password]
+              required: [matriculeOrEmail, password]
               properties:
-                matricule:
+                matriculeOrEmail:
                   type: string
                   example: "20230001"
                 password:
@@ -38,6 +38,8 @@ paths:
       responses:
         '200':
           description: Connexion réussie, retourne le Token JWT
+        '429':
+          description: Trop de requêtes depuis cette adresse IP (rate limit 20 req/min)
           content:
             application/json:
               schema:
@@ -45,9 +47,6 @@ paths:
                 properties:
                   token:
                     type: string
-                  type:
-                    type: string
-                    example: "Bearer"
                   id:
                     type: integer
                   matricule:
@@ -126,7 +125,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [titre, type, targetUfr]
+              required: [titre, type, dateDebut, dateFin]
               properties:
                 titre:
                   type: string

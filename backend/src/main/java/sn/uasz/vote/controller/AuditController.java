@@ -1,5 +1,7 @@
 package sn.uasz.vote.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -10,16 +12,19 @@ import sn.uasz.vote.service.AuditService;
 @RequestMapping("/api/v1/audit")
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'COMMISSION_ELECTORALE')")
+@Tag(name = "Audit Cryptographique", description = "Consultation et export CSV du journal d'émargement anonymisé")
 public class AuditController {
 
     private final AuditService auditService;
 
     @GetMapping("/{electionId}")
+    @Operation(summary = "Obtenir le rapport d'audit anonymisé d'une élection")
     public ResponseEntity<AuditService.AuditReportDto> getAuditReport(@PathVariable Long electionId) {
         return ResponseEntity.ok(auditService.getAuditReport(electionId));
     }
 
     @GetMapping("/{electionId}/export-csv")
+    @Operation(summary = "Exporter le journal d'audit anonymisé au format CSV")
     public ResponseEntity<String> exportAuditCsv(@PathVariable Long electionId) {
         String csvContent = auditService.generateAuditCsv(electionId);
         return ResponseEntity.ok()

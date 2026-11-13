@@ -1,0 +1,54 @@
+databases:
+  - name: voteuasz-db
+    plan: free
+    databaseName: voteuasz_db
+    user: uasz_admin
+
+services:
+  - type: web
+    name: voteuasz-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/elections
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: voteuasz-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: voteuasz-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: voteuasz-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CRYPTO_SECRET
+        generateValue: true
+      - key: CRYPTO_SECRET_KEY
+        sync: false
+      - key: AUDIT_IP_SALT
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: SPRING_MAIL_HOST
+        sync: false
+      - key: SPRING_MAIL_PORT
+        value: "587"
+      - key: SPRING_MAIL_USERNAME
+        sync: false
+      - key: SPRING_MAIL_PASSWORD
+        sync: false
+      - key: SPRING_MAIL_SMTP_AUTH
+        value: "true"
+      - key: SPRING_MAIL_STARTTLS_ENABLE
+        value: "true"
+      - key: DEFAULT_ELECTEUR_PASSWORD
+        sync: false
+      - key: DEFAULT_CANDIDAT_PASSWORD
+        sync: false
