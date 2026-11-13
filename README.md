@@ -221,7 +221,18 @@ npm start
 
 ## Comptes de Démonstration
 
-> Ces comptes sont initialisés automatiquement au premier démarrage via `DataInitializer`.
+### Production (Démo en ligne — Vercel / Render)
+
+> Ces comptes sont accessibles directement via les boutons rapides sur la page de connexion (`https://vote-uasz-frontend.vercel.app/login`).
+
+| Rôle | Identifiant | Mot de Passe |
+|---|---|---|
+| Super-Admin Electoral | `ADM001` | `MonAdmin@2026!` |
+| Commission Electorale | `COMM001` | `Electeur@2026!` |
+| Candidat | `CAND202301` | `Candidat@2026!` |
+| Electeur (Etudiant L3) | `20230001` | `Electeur@2026!` |
+
+### Développement local (`DataInitializer`, profil `dev`)
 
 | Rôle | Identifiant | Mot de Passe |
 |---|---|---|
