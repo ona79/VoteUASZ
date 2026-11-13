@@ -16,6 +16,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Filtre de rate limiting par adresse IP (fenêtre glissante de 60 secondes)
  * protégeant les endpoints sensibles d'authentification et d'OTP.
+ *
+ * <p>L'IP du client est résolue via {@link ClientIpResolver#resolve(HttpServletRequest)}.
+ * Avec {@code server.forward-headers-strategy=native} actif en prod (application-prod.yml),
+ * {@code request.getRemoteAddr()} retourne l'IP réelle injectée par Render — le client ne peut
+ * pas forger son IP pour contourner la limite.</p>
  */
 @Slf4j
 public class RateLimitingFilter extends OncePerRequestFilter {
@@ -37,7 +42,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String uri = request.getRequestURI();
         if ("POST".equalsIgnoreCase(request.getMethod()) && RATE_LIMITED_PATHS.contains(uri)) {
-            String clientIp = extractClientIp(request);
+            String clientIp = ClientIpResolver.resolve(request);
             String bucketKey = clientIp + ":" + uri;
             long now = System.currentTimeMillis();
 
@@ -68,17 +73,4 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
-    public static String extractClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        String realIp = request.getHeader("X-Real-IP");
-        if (realIp != null && !realIp.isBlank()) {
-            return realIp.trim();
-        }
-        return request.getRemoteAddr() != null ? request.getRemoteAddr() : "unknown";
-    }
 }
-

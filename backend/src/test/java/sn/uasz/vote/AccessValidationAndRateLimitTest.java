@@ -223,12 +223,12 @@ class AccessValidationAndRateLimitTest {
     @Test
     @DisplayName("Rate limiting IP : la 21e requête POST /auth/login dans la minute retourne 429")
     void rateLimiting_returns429After20RequestsPerMinute() throws Exception {
-        String ipHeader = "198.51.100.77";
+        // Avec ClientIpResolver.resolve(), c'est request.getRemoteAddr() qui est utilisé
+        // (MockMvc utilise 127.0.0.1). Un header X-Forwarded-For forgé n'est PAS pris en compte.
         String body = "{\"matriculeOrEmail\":\"INCONNU\",\"password\":\"wrong\"}";
 
         for (int i = 0; i < 20; i++) {
             int status = mockMvc.perform(post("/api/v1/auth/login")
-                            .header("X-Forwarded-For", ipHeader)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(body))
                     .andReturn().getResponse().getStatus();
@@ -236,7 +236,6 @@ class AccessValidationAndRateLimitTest {
         }
 
         mockMvc.perform(post("/api/v1/auth/login")
-                        .header("X-Forwarded-For", ipHeader)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isTooManyRequests())
