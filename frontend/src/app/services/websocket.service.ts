@@ -3,6 +3,7 @@ import { Client, IMessage } from '@stomp/stompjs';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { LiveResultsDto } from '../models/vote.models';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +15,13 @@ export class WebSocketService {
   public results$: Observable<LiveResultsDto | null> = this.resultsSubject.asObservable();
 
   connect(electionId: number): void {
-    const wsUrl = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws';
+    // En prod, environment.wsUrl pointe directement vers le backend Render (Vercel ne proxifie pas les WS).
+    // En dev, wsUrl est vide → on utilise window.location.host (le proxy Angular gère les WS).
+    const base = environment.wsUrl
+      ? environment.wsUrl
+      : (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host;
+    const wsUrl = `${base}/ws`;
+
     const token = this.authService.getToken();
 
     this.stompClient = new Client({

@@ -87,7 +87,7 @@ public class VoteController {
     public ResponseEntity<VoteResponseDto> submitVote(
             @Valid @RequestBody VoteRequestDto request,
             jakarta.servlet.http.HttpServletRequest httpRequest) {
-        String clientIp = sn.uasz.vote.security.RateLimitingFilter.extractClientIp(httpRequest);
+        String clientIp = sn.uasz.vote.security.ClientIpResolver.resolve(httpRequest);
         VoteResponseDto response = votingService.submitVote(
                 request.getVoteToken(),
                 request.getElectionId(),

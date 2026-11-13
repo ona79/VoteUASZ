@@ -12,8 +12,11 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/v1/elections
     envVars:
+      # Profil Spring Boot
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+
+      # Base de données PostgreSQL (injectée automatiquement depuis voteuasz-db)
       - key: SPRING_DATASOURCE_URL
         fromDatabase:
           name: voteuasz-db
@@ -26,16 +29,26 @@ services:
         fromDatabase:
           name: voteuasz-db
           property: password
+
+      # Clé de signature JWT (256 bits minimum) — générée automatiquement par Render
       - key: JWT_SECRET
         generateValue: true
+
+      # Clé de chiffrement AES-256 des bulletins (32+ caractères) — générée automatiquement par Render
+      # NOTE : CRYPTO_SECRET_KEY a été supprimé (doublon dangereux avec CRYPTO_SECRET)
       - key: CRYPTO_SECRET
         generateValue: true
-      - key: CRYPTO_SECRET_KEY
-        sync: false
+
+      # Sel de hachage des IPs dans le journal d'émargement — généré automatiquement par Render
       - key: AUDIT_IP_SALT
         generateValue: true
+
+      # URL Vercel du frontend Angular (ex : https://voteuasz.vercel.app)
+      # À renseigner manuellement dans l'interface Render après le déploiement Vercel
       - key: ALLOWED_ORIGINS
         sync: false
+
+      # Configuration SMTP pour l'envoi des codes OTP par e-mail
       - key: SPRING_MAIL_HOST
         sync: false
       - key: SPRING_MAIL_PORT
@@ -48,7 +61,21 @@ services:
         value: "true"
       - key: SPRING_MAIL_STARTTLS_ENABLE
         value: "true"
+
+      # Mot de passe par défaut attribué aux électeurs importés via CSV (12+ car., fort)
       - key: DEFAULT_ELECTEUR_PASSWORD
         sync: false
+
+      # Mot de passe par défaut attribué aux candidats importés via CSV (12+ car., fort)
       - key: DEFAULT_CANDIDAT_PASSWORD
+        sync: false
+
+      # Bootstrap du premier SUPER_ADMIN au démarrage (si aucun admin n'existe en base)
+      # Ces variables sont utilisées une seule fois au premier démarrage.
+      # Après création, vous pouvez les supprimer ou les laisser (elles seront ignorées).
+      - key: ADMIN_MATRICULE
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
         sync: false
