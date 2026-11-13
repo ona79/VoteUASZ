@@ -58,7 +58,11 @@ services:
       - key: ALLOWED_ORIGINS
         sync: false
 
-      # Configuration SMTP pour l'envoi des codes OTP par e-mail
+      # Clé API HTTPS Brevo (recommandée sur Render Free car les ports SMTP sont souvent bloqués)
+      - key: BREVO_API_KEY
+        sync: false
+
+      # Configuration SMTP pour l'envoi des codes OTP par e-mail (fallback / local)
       - key: SPRING_MAIL_HOST
         sync: false
       - key: SPRING_MAIL_PORT
