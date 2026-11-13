@@ -133,3 +133,4 @@ describe('ElectionDetailComponent', () => {
     expect(component.chartType).toBe('doughnut');
   });
 });
+

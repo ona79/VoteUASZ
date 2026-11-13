@@ -60,3 +60,4 @@
    - Créer un compte sur **Render** (Blueprint `render.yaml`) et **Vercel** (`vercel.json`).
    - Configurer les variables d'environnement (`JWT_SECRET`, `CRYPTO_SECRET`, `CRYPTO_SECRET_KEY`, `AUDIT_IP_SALT`, `ALLOWED_ORIGINS`, `SPRING_MAIL_*`, `DEFAULT_ELECTEUR_PASSWORD`, `DEFAULT_CANDIDAT_PASSWORD`).
    - Mettre à jour l'URL Render dans `vercel.json` (`/api/(.*)`), déployer, puis renseigner l'URL publique dans `README.md` (`URL de démo`).
+
