@@ -130,7 +130,7 @@ class VoteControllerTest {
                 .ballotHash("sha256-hash-ballot")
                 .build();
 
-        when(votingService.submitVote(eq("valid-token"), eq(1L), eq(10L)))
+        when(votingService.submitVote(eq("valid-token"), eq(1L), eq(10L), anyString()))
                 .thenReturn(response);
 
         mockMvc.perform(post("/api/v1/vote/submit")

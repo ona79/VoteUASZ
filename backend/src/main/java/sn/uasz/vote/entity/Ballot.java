@@ -3,7 +3,7 @@ package sn.uasz.vote.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "ballots")
@@ -15,8 +15,8 @@ import java.time.LocalDateTime;
 public class Ballot {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "election_id", nullable = false)
@@ -30,12 +30,4 @@ public class Ballot {
 
     @Column(name = "ballot_hash", nullable = false, unique = true)
     private String ballotHash;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
 }

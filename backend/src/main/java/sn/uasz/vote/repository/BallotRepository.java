@@ -6,9 +6,10 @@ import org.springframework.stereotype.Repository;
 import sn.uasz.vote.entity.Ballot;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface BallotRepository extends JpaRepository<Ballot, Long> {
+public interface BallotRepository extends JpaRepository<Ballot, UUID> {
     List<Ballot> findByElectionId(Long electionId);
     long countByElectionId(Long electionId);
     long countByElectionIdAndCandidatureId(Long electionId, Long candidatureId);

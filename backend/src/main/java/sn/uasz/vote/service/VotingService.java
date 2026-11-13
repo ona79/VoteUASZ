@@ -35,6 +35,9 @@ public class VotingService {
     private final SimpMessagingTemplate messagingTemplate;
     private final OtpEmailService otpEmailService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.audit.ip-salt:${app.crypto.secret-key:VoteUASZ-Default-IP-Salt}}")
+    private String ipAuditSalt;
+
     private final SecureRandom random = new SecureRandom();
 
     @Transactional
@@ -140,6 +143,11 @@ public class VotingService {
 
     @Transactional
     public VoteResponseDto submitVote(String tokenHash, Long electionId, Long candidatureId) {
+        return submitVote(tokenHash, electionId, candidatureId, "unknown");
+    }
+
+    @Transactional
+    public VoteResponseDto submitVote(String tokenHash, Long electionId, Long candidatureId, String clientIp) {
         VoteToken voteToken = voteTokenRepository.findByTokenHashAndUsedFalse(tokenHash)
                 .orElseThrow(() -> new IllegalArgumentException("Jeton de vote invalide ou déjà utilisé."));
 
@@ -188,11 +196,14 @@ public class VotingService {
         ballotRepository.save(ballot);
 
         // 2. Émargement de l'électeur (VoterAuditLog sans lien vers le bulletin)
+        // Horodatage arrondi à l'heure et IP réelle salée pour empêcher toute corrélation temporelle
+        String safeIp = (clientIp != null && !clientIp.isBlank()) ? clientIp : "unknown";
+        String salt = ipAuditSalt != null ? ipAuditSalt : "VoteUASZ-IP-Salt";
         VoterAuditLog auditLog = VoterAuditLog.builder()
                 .user(user)
                 .election(election)
-                .votedAt(LocalDateTime.now())
-                .ipHash(cryptoService.hash("USER_IP_" + user.getId()))
+                .votedAt(LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.HOURS))
+                .ipHash(cryptoService.hash(salt + ":" + safeIp))
                 .build();
         voterAuditLogRepository.save(auditLog);
 

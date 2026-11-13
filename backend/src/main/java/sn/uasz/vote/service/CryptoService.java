@@ -1,11 +1,14 @@
 package sn.uasz.vote.service;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -17,25 +20,40 @@ import java.util.Base64;
 /**
  * Service de chiffrement des bulletins de vote.
  * <p>
- * Utilise AES-256 en mode GCM (Galois/Counter Mode) avec NoPadding :
+ * Utilise AES-256 en mode GCM (Galois/Counter Mode) avec NoPadding et dérivation de clé PBKDF2WithHmacSHA256 :
  * <ul>
  *   <li>Confidentialité garantie par AES-256</li>
  *   <li>Intégrité et authenticité garanties par le tag GCM 128-bit</li>
  *   <li>IV aléatoire de 12 octets préfixé au chiffré pour l'unicité de chaque bulletin</li>
+ *   <li>Validation stricte de la longueur minimale de clé (32 caractères) au démarrage</li>
  * </ul>
- * Mode ECB remplacé : ECB est déterministe (blocs identiques → chiffrés identiques),
- * ce qui permet une analyse de fréquence et viole l'anonymat du scrutin.
  */
 @Service
 public class CryptoService {
 
     private static final int GCM_IV_LENGTH_BYTES = 12;
     private static final int GCM_TAG_LENGTH_BITS = 128;
+    private static final int MIN_SECRET_LENGTH = 32;
+    private static final int PBKDF2_ITERATIONS = 65_536;
+    private static final int AES_KEY_BITS = 256;
+    private static final byte[] PBKDF2_SALT = "VoteUASZ-AES256-GCM-Key-Derivation-Salt".getBytes(StandardCharsets.UTF_8);
 
     @Value("${app.crypto.secret-key}")
     private String secretKey;
 
+    private volatile SecretKey cachedSecretKey;
     private final SecureRandom secureRandom = new SecureRandom();
+
+    @PostConstruct
+    public void validateAndInitKey() {
+        if (secretKey == null || secretKey.length() < MIN_SECRET_LENGTH) {
+            throw new IllegalStateException(
+                    "CRYPTO_SECRET invalide : la clé de chiffrement doit contenir au moins "
+                            + MIN_SECRET_LENGTH + " caractères."
+            );
+        }
+        this.cachedSecretKey = deriveKeyPbkdf2(secretKey);
+    }
 
     /**
      * Chiffre la donnée en AES-256/GCM.
@@ -102,10 +120,21 @@ public class CryptoService {
         }
     }
 
-    private SecretKey getSecretKey() throws Exception {
-        byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
-        MessageDigest sha = MessageDigest.getInstance("SHA-256");
-        byte[] hashed = sha.digest(keyBytes); // → 32 octets = AES-256
-        return new SecretKeySpec(hashed, "AES");
+    private SecretKey getSecretKey() {
+        if (cachedSecretKey == null) {
+            validateAndInitKey();
+        }
+        return cachedSecretKey;
+    }
+
+    private SecretKey deriveKeyPbkdf2(String secret) {
+        try {
+            PBEKeySpec spec = new PBEKeySpec(secret.toCharArray(), PBKDF2_SALT, PBKDF2_ITERATIONS, AES_KEY_BITS);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            byte[] keyBytes = factory.generateSecret(spec).getEncoded();
+            return new SecretKeySpec(keyBytes, "AES");
+        } catch (Exception e) {
+            throw new IllegalStateException("Erreur de dérivation PBKDF2 de la clé AES-256", e);
+        }
     }
 }
