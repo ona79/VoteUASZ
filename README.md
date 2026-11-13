@@ -1,8 +1,28 @@
+<div align="center">
+
+<img src="./frontend/src/assets/logo_vote_uasz.webp" alt="Logo VoteUASZ" width="110" />
+
 # VoteUASZ — Plateforme d'Élections Universitaires
 
-Système de vote électronique sécurisé, mobile-first, développé pour l'**Université Assane Seck de Ziguinchor (UASZ)**.
+**Système de vote électronique sécurisé, chiffré de bout en bout (AES-256) et mobile-first, développé pour l'Université Assane Seck de Ziguinchor (UASZ).**
 
-**Stack :** Java 21 · Spring Boot 3 · Angular 17 · PostgreSQL 16 · Docker · WebSocket STOMP · AES-256
+[![VoteUASZ CI](https://github.com/ona79/VoteUASZ/actions/workflows/ci.yml/badge.svg)](https://github.com/ona79/VoteUASZ/actions/workflows/ci.yml)
+[![Frontend Vercel](https://img.shields.io/badge/Frontend-Vercel-000000?logo=vercel&logoColor=white)](https://vote-uasz-frontend.vercel.app)
+[![Backend Render](https://img.shields.io/badge/Backend-Render-46E3B7?logo=render&logoColor=black)](https://voteuasz-backend-r5cn.onrender.com/api/v1/elections)
+
+![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot 3](https://img.shields.io/badge/Spring%20Boot-3.2-6DB33F?logo=springboot&logoColor=white)
+![Angular 17](https://img.shields.io/badge/Angular-17-DD0031?logo=angular&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-06B6D4?logo=tailwindcss&logoColor=white)
+![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Multi--Stage-2496ED?logo=docker&logoColor=white)
+
+<br/>
+
+**[🌐 Accéder à la plateforme](https://vote-uasz-frontend.vercel.app)** · **[⚡ API Backend](https://voteuasz-backend-r5cn.onrender.com/api/v1/elections)** · **[📘 Spécification OpenAPI](./docs/openapi.yaml)**
+
+</div>
 
 ---
 
