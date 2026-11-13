@@ -37,7 +37,9 @@ public class VoterAuditLog {
     @PrePersist
     protected void onCreate() {
         if (this.votedAt == null) {
-            this.votedAt = LocalDateTime.now();
+            this.votedAt = LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.HOURS);
+        } else {
+            this.votedAt = this.votedAt.truncatedTo(java.time.temporal.ChronoUnit.HOURS);
         }
     }
 }

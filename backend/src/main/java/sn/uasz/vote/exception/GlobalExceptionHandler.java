@@ -103,11 +103,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
         log.error("[GLOBAL EXCEPTION - 400 VALIDATION ERROR] {}", ex.getMessage());
+        java.util.Map<String, String> fieldErrors = new java.util.LinkedHashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(err ->
+                fieldErrors.put(err.getField(), err.getDefaultMessage()));
+        String summary = fieldErrors.values().stream().findFirst().orElse("Validation des champs échouée");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                 "error", "Bad Request",
-                "message", "Validation des champs échouée : " + ex.getBindingResult().toString()
+                "message", summary,
+                "errors", fieldErrors
         ));
     }
 

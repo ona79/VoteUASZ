@@ -79,6 +79,23 @@ public class CandidacyService {
                 .stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
+    /**
+     * Retourne toutes les candidatures pour la Commission / Super-Admin,
+     * et uniquement les candidatures APPROVED (+ celle du candidat connecté s'il est titulaire)
+     * pour les autres utilisateurs authentifiés.
+     */
+    public List<CandidatureDto> getCandidaciesByElectionForUser(Long electionId, String userMatricule, boolean isPrivileged) {
+        if (isPrivileged) {
+            return getCandidaciesByElection(electionId);
+        }
+        return candidatureRepository.findByElectionId(electionId).stream()
+                .filter(c -> c.getStatut() == CandidacyStatus.APPROVED
+                        || (userMatricule != null && c.getCandidat() != null
+                        && userMatricule.equals(c.getCandidat().getMatricule())))
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
     public List<CandidatureDto> getApprovedCandidaciesByElection(Long electionId) {
         return candidatureRepository.findByElectionIdAndStatut(electionId, CandidacyStatus.APPROVED)
                 .stream().map(this::mapToDto).collect(Collectors.toList());
@@ -112,7 +129,9 @@ public class CandidacyService {
 
         return CandidatureDto.builder()
                 .id(c.getId())
-                .electionId(c.getElection().getId())
+                .electionId(c.getElection() != null ? c.getElection().getId() : null)
+                .electionStatut(c.getElection() != null ? c.getElection().getStatut() : null)
+                .electionTitre(c.getElection() != null ? c.getElection().getTitre() : null)
                 .candidatId(c.getCandidat() != null ? c.getCandidat().getId() : null)
                 .candidatNomComplet(realNomComplet)
                 .candidatNom(c.getCandidat() != null ? c.getCandidat().getNom() : null)

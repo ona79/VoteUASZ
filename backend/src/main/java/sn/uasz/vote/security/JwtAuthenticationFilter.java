@@ -35,8 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = getJwtFromRequest(request);
 
             if (StringUtils.hasText(jwt)) {
-                log.info("[JWT Filter] Request {} {} — Token JWT reçu (début: '{}...')",
-                        method, uri, jwt.substring(0, Math.min(jwt.length(), 20)));
+                log.debug("[JWT Filter] Request {} {} — Token JWT présent", method, uri);
 
                 if (tokenProvider.validateToken(jwt)) {
                     String matricule = tokenProvider.getMatriculeFromToken(jwt);

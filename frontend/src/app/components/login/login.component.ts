@@ -25,7 +25,7 @@ import { NotificationService } from '../../services/notification.service';
           
           <div class="relative z-10 text-center md:text-left flex flex-col items-center md:items-start mb-4 md:mb-0">
             <div class="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-xl mb-4 md:mb-6 border border-white/20 overflow-hidden">
-              <img src="assets/logo_vote_uasz.PNG" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
+              <img src="assets/logo_vote_uasz.webp" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
             </div>
             <h2 class="text-2xl md:text-3xl font-black tracking-tight mb-1.5 md:mb-2">VoteUASZ</h2>
             <p class="text-emerald-100/90 text-xs font-medium leading-relaxed max-w-xs">Le portail de vote électronique sécurisé de l'Université Assane Seck de Ziguinchor.</p>

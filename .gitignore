@@ -21,3 +21,6 @@ reports/
 backend/reports/
 *.log
 *.pid
+
+# Dossier imbriqué local non suivi
+VoteUASZ/

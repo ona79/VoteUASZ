@@ -263,10 +263,11 @@ if (raison === null) return; // Annulation propre (Echap, clic extérieur, Annul
 | Mécanisme | Implémentation |
 |---|---|
 | **Authentification** | JWT signé HS256, expiration configurable |
-| **Chiffrement des bulletins** | AES-256 (clé via variable d'environnement `CRYPTO_SECRET`) |
-| **Hachage des OTP** | SHA-256 |
-| **Anti-double vote** | `VoteToken` à usage unique + marquage `hasVoted` en base |
-| **Anonymat du suffrage** | Dissociation totale identité électeur / contenu du bulletin |
+| **Chiffrement des bulletins** | AES-256-GCM avec dérivation de clé PBKDF2WithHmacSHA256 (`CRYPTO_SECRET` >= 32 caractères) |
+| **Hachage des OTP** | BCrypt (code aléatoire 6 chiffres valable 5 min) — acheminement par **e-mail uniquement** (`SMS` = extension future, non implémenté) |
+| **Anti-double vote** | `VoteToken` à usage unique lié à l'élection + contrainte unique `(user_id, election_id)` sur `voter_audit_logs` |
+| **Anonymat du suffrage** | `Ballot` identifié par UUID aléatoire sans `user_id` ni `createdAt` ; `VoterAuditLog.votedAt` arrondi à l'heure et `ipHash` calculé sur l'IP réelle salée (`AUDIT_IP_SALT`). *Note d'architecture :* `Ballot.candidatureId` est conservé en colonne pour permettre le dépouillement SQL `GROUP BY` en temps réel sans déchiffrer tous les bulletins à chaque vote, la dissociation totale étant garantie par l'absence de lien direct ou temporel avec `VoterAuditLog`. |
+| **Rate limiting IP** | 20 requêtes/minute/IP sur `/api/v1/auth/login`, `/api/v1/vote/request-otp`, `/api/v1/vote/verify-otp` (HTTP 429) |
 | **Contrôle d'accès routes** | `authGuard` (authentification) + `roleGuard(roles[])` (autorisation) |
 | **Injection JWT automatique** | `jwt.interceptor` — injection du Bearer token sur toutes les requêtes HTTP |
 | **Téléchargements authentifiés** | Export CSV et PDF via `HttpClient` avec token JWT (pas de `window.open`) |
@@ -290,7 +291,7 @@ cd backend
 mvn test
 ```
 
-**Résultats actuels : 84 tests — 0 échec — 0 erreur**
+**Résultats actuels : 104 tests backend — 0 échec — 0 erreur** *(+ 7 tests ajoutés sur les lots A à D, couverture JaCoCo > 74 %)*
 
 | Suite de Tests | Nombre de tests | Ce qui est testé |
 |---|---|---|
@@ -321,44 +322,51 @@ npm test
 
 ## Déploiement Cloud
 
-### Backend & PostgreSQL — Render / Railway
+> **URL de démo : À REMPLIR APRÈS DÉPLOIEMENT**
+
+Les fichiers d'infrastructure fournis à la racine permettent un déploiement gratuit en quelques minutes :
+- [`render.yaml`](./render.yaml) — Blueprint Render (Web Service Docker + PostgreSQL managé gratuit)
+- [`vercel.json`](./vercel.json) — Configuration Vercel pour la SPA Angular (rewrites API & routing HTML5)
+- [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) — Pipeline CI GitHub Actions (`mvn verify` JDK 21 + `ng build --configuration production`)
+
+### Backend & PostgreSQL — Render (Blueprint)
 
 <details>
 <summary>Voir le guide de déploiement</summary>
 
-1. Créez un service **PostgreSQL** sur Render ou Railway
-2. Créez un **Web Service** pointant sur ce dépôt (Dockerfile à la racine)
-3. Définissez les variables d'environnement de production :
+1. Connectez ce dépôt sur [Render](https://render.com) via **New → Blueprint** (`render.yaml` est détecté automatiquement)
+2. Render provisionne `voteuasz-db` (PostgreSQL) et `voteuasz-backend` (Docker)
+3. Renseignez les variables marquées `sync: false` dans l'interface Render :
 
 | Variable | Description |
 |---|---|
-| `SPRING_PROFILES_ACTIVE` | `prod` |
-| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://<host>:5432/voteuasz_db` |
-| `SPRING_DATASOURCE_USERNAME` | Utilisateur DB de production |
-| `SPRING_DATASOURCE_PASSWORD` | Mot de passe DB sécurisé |
-| `JWT_SECRET` | Clé aléatoire minimum 256 bits |
-| `CRYPTO_SECRET` | Clé AES minimum 32 caractères |
-| `CRYPTO_SECRET_KEY` | Alias utilisé par certaines configurations — même valeur que `CRYPTO_SECRET` |
+| `SPRING_PROFILES_ACTIVE` | `prod` (défini dans `render.yaml`) |
+| `SPRING_DATASOURCE_URL` | Injecté automatiquement depuis `voteuasz-db` |
+| `SPRING_DATASOURCE_USERNAME` | Injecté automatiquement depuis `voteuasz-db` |
+| `SPRING_DATASOURCE_PASSWORD` | Injecté automatiquement depuis `voteuasz-db` |
+| `JWT_SECRET` | Généré automatiquement (ou clé >= 256 bits) |
+| `CRYPTO_SECRET` | Généré automatiquement (>= 32 caractères) |
+| `CRYPTO_SECRET_KEY` | Même valeur que `CRYPTO_SECRET` |
+| `AUDIT_IP_SALT` | Généré automatiquement (sel pour `ipHash`) |
 | `DEFAULT_ELECTEUR_PASSWORD` | Mot de passe attribué aux électeurs importés via CSV |
 | `DEFAULT_CANDIDAT_PASSWORD` | Mot de passe attribué aux candidats importés via CSV |
-| `ALLOWED_ORIGINS` | Liste des origines frontend autorisées (ex : `https://voteuasz.vercel.app`) |
-| `SPRING_MAIL_HOST` | Hôte SMTP de production |
+| `ALLOWED_ORIGINS` | URL Vercel du frontend (ex : `https://voteuasz.vercel.app`) |
+| `SPRING_MAIL_HOST` | Hôte SMTP de production (ex : `smtp.gmail.com` ou Resend/Brevo) |
 | `SPRING_MAIL_PORT` | `587` |
 | `SPRING_MAIL_USERNAME` | Adresse email d'envoi |
-| `SPRING_MAIL_PASSWORD` | Mot de passe SMTP |
+| `SPRING_MAIL_PASSWORD` | Mot de passe / clé API SMTP |
 
 </details>
 
-### Frontend Angular — Vercel / Netlify
+### Frontend Angular — Vercel
 
 <details>
 <summary>Voir le guide de déploiement</summary>
 
-1. Importez le dossier `frontend/` dans votre projet Vercel ou Netlify
-2. Framework preset : **Angular**
-3. Build command : `npm run build`
-4. Output directory : `dist/voteuasz-frontend/browser`
-5. Définissez la variable d'environnement pointant vers l'URL du backend déployé
+1. Importez le dépôt sur [Vercel](https://vercel.com) (la racine contient `vercel.json`)
+2. Mettez à jour l'URL de destination `/api/(.*)` dans `vercel.json` avec l'URL Render de votre backend
+3. Déployez : Vercel exécute `cd frontend && npm ci && npx ng build --configuration production` et publie `frontend/dist/voteuasz-frontend/browser`
+4. Ajoutez l'URL Vercel obtenue dans `ALLOWED_ORIGINS` sur Render et dans la section **URL de démo** ci-dessus
 
 </details>
 

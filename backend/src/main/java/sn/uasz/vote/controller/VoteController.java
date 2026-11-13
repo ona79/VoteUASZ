@@ -1,5 +1,7 @@
 package sn.uasz.vote.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,11 +16,13 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/vote")
 @RequiredArgsConstructor
+@Tag(name = "Vote Sécurisé", description = "Flux OTP par e-mail, jeton unique et dépôt de bulletin chiffré")
 public class VoteController {
 
     private final VotingService votingService;
 
     @PostMapping("/request-otp")
+    @Operation(summary = "Demander un code OTP par e-mail (valable 5 min)")
     public ResponseEntity<Map<String, String>> requestOtp(
             @RequestParam(required = false) Long electionId,
             @RequestBody(required = false) Map<String, Object> body,
@@ -43,6 +47,7 @@ public class VoteController {
     }
 
     @PostMapping("/verify-otp")
+    @Operation(summary = "Vérifier l'OTP et obtenir un jeton de vote à usage unique")
     public ResponseEntity<Map<String, String>> verifyOtp(
             @RequestParam(required = false) Long electionId,
             @RequestParam(required = false) String otpCode,
@@ -78,12 +83,27 @@ public class VoteController {
     }
 
     @PostMapping("/submit")
-    public ResponseEntity<VoteResponseDto> submitVote(@Valid @RequestBody VoteRequestDto request) {
+    @Operation(summary = "Déposer un bulletin chiffré AES-256-GCM avec le jeton unique")
+    public ResponseEntity<VoteResponseDto> submitVote(
+            @Valid @RequestBody VoteRequestDto request,
+            jakarta.servlet.http.HttpServletRequest httpRequest) {
+        String clientIp = sn.uasz.vote.security.RateLimitingFilter.extractClientIp(httpRequest);
         VoteResponseDto response = votingService.submitVote(
                 request.getVoteToken(),
                 request.getElectionId(),
-                request.getCandidatureId()
+                request.getCandidatureId(),
+                clientIp
         );
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/status/{electionId}")
+    @Operation(summary = "Vérifier si l'électeur connecté a déjà voté pour une élection")
+    public ResponseEntity<Map<String, Object>> getVotingStatus(@PathVariable Long electionId, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
+            return ResponseEntity.ok(Map.of("hasVoted", false, "authenticated", false));
+        }
+        boolean hasVoted = votingService.hasUserVoted(auth.getName(), electionId);
+        return ResponseEntity.ok(Map.of("hasVoted", hasVoted, "authenticated", true));
     }
 }

@@ -35,6 +35,9 @@ public class VotingService {
     private final SimpMessagingTemplate messagingTemplate;
     private final OtpEmailService otpEmailService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.audit.ip-salt:${app.crypto.secret-key:VoteUASZ-Default-IP-Salt}}")
+    private String ipAuditSalt;
+
     private final SecureRandom random = new SecureRandom();
 
     @Transactional
@@ -45,9 +48,7 @@ public class VotingService {
         Election election = electionRepository.findById(electionId)
                 .orElseThrow(() -> new IllegalArgumentException("Élection non trouvée"));
 
-        if (election.getStatut() != ElectionStatus.VOTE_OUVERT) {
-            throw new IllegalStateException("Le vote n'est pas ouvert pour cette élection.");
-        }
+        assertVotingWindowOpen(election);
 
         if (!eligibilityService.isEligible(user, election)) {
             throw new IllegalStateException(eligibilityService.getIneligibilityReason(user, election));
@@ -142,6 +143,11 @@ public class VotingService {
 
     @Transactional
     public VoteResponseDto submitVote(String tokenHash, Long electionId, Long candidatureId) {
+        return submitVote(tokenHash, electionId, candidatureId, "unknown");
+    }
+
+    @Transactional
+    public VoteResponseDto submitVote(String tokenHash, Long electionId, Long candidatureId, String clientIp) {
         VoteToken voteToken = voteTokenRepository.findByTokenHashAndUsedFalse(tokenHash)
                 .orElseThrow(() -> new IllegalArgumentException("Jeton de vote invalide ou déjà utilisé."));
 
@@ -152,11 +158,19 @@ public class VotingService {
         Election election = electionRepository.findById(electionId)
                 .orElseThrow(() -> new IllegalArgumentException("Élection non trouvée"));
 
-        if (election.getStatut() != ElectionStatus.VOTE_OUVERT) {
-            throw new IllegalStateException("La période de vote est fermée.");
+        // Le jeton est strictement lié à l'élection pour laquelle l'OTP a été validé
+        if (voteToken.getElection() == null || !electionId.equals(voteToken.getElection().getId())) {
+            throw new IllegalArgumentException("Ce jeton de vote n'est pas valide pour cette élection.");
         }
 
+        assertVotingWindowOpen(election);
+
         User user = voteToken.getUser();
+        // Re-vérification de l'éligibilité au moment du dépôt (compte désactivé, profil modifié...)
+        if (!eligibilityService.isEligible(user, election)) {
+            throw new IllegalStateException(eligibilityService.getIneligibilityReason(user, election));
+        }
+
         if (voterAuditLogRepository.existsByUserIdAndElectionId(user.getId(), electionId)) {
             throw new IllegalStateException("Anti-double-vote : Vous avez déjà un vote comptabilisé pour cette élection.");
         }
@@ -182,11 +196,14 @@ public class VotingService {
         ballotRepository.save(ballot);
 
         // 2. Émargement de l'électeur (VoterAuditLog sans lien vers le bulletin)
+        // Horodatage arrondi à l'heure et IP réelle salée pour empêcher toute corrélation temporelle
+        String safeIp = (clientIp != null && !clientIp.isBlank()) ? clientIp : "unknown";
+        String salt = ipAuditSalt != null ? ipAuditSalt : "VoteUASZ-IP-Salt";
         VoterAuditLog auditLog = VoterAuditLog.builder()
                 .user(user)
                 .election(election)
-                .votedAt(LocalDateTime.now())
-                .ipHash(cryptoService.hash("USER_IP_" + user.getId()))
+                .votedAt(LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.HOURS))
+                .ipHash(cryptoService.hash(salt + ":" + safeIp))
                 .build();
         voterAuditLogRepository.save(auditLog);
 
@@ -247,5 +264,33 @@ public class VotingService {
                 .totalVotes(totalVotes)
                 .candidateResults(candidateResults)
                 .build();
+    }
+
+    /**
+     * Vérifie que le scrutin est ouvert : statut VOTE_OUVERT ET dateDebut <= maintenant <= dateFin.
+     * Les deux conditions sont exigées : un statut resté VOTE_OUVERT après dateFin ne permet plus de voter.
+     */
+    void assertVotingWindowOpen(Election election) {
+        if (election.getStatut() != ElectionStatus.VOTE_OUVERT) {
+            throw new IllegalStateException("Le vote n'est pas ouvert pour cette élection (statut : " + election.getStatut() + ").");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (election.getDateDebut() != null && now.isBefore(election.getDateDebut())) {
+            throw new IllegalStateException("Le scrutin n'a pas encore commencé. Ouverture prévue le "
+                    + election.getDateDebut().format(DATE_FMT) + ".");
+        }
+        if (election.getDateFin() != null && now.isAfter(election.getDateFin())) {
+            throw new IllegalStateException("Le scrutin est terminé depuis le "
+                    + election.getDateFin().format(DATE_FMT) + ". Il n'est plus possible de voter.");
+        }
+    }
+
+    private static final java.time.format.DateTimeFormatter DATE_FMT =
+            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm");
+
+    public boolean hasUserVoted(String userMatricule, Long electionId) {
+        return userRepository.findByMatricule(userMatricule)
+                .map(u -> voterAuditLogRepository.existsByUserIdAndElectionId(u.getId(), electionId))
+                .orElse(false);
     }
 }
