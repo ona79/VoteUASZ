@@ -120,6 +120,7 @@ VoteUASZ/
 │       ├── services/                   # auth · election · vote · websocket · notification · complaint · candidacy
 │       ├── guards/                     # authGuard · roleGuard
 │       ├── interceptors/               # jwt.interceptor (injection JWT + gestion session expirée)
+│       ├── environments/               # Configuration dev / prod (apiUrl, wsUrl)
 │       └── models/                     # Interfaces TypeScript
 │
 ├── docs/
@@ -128,7 +129,9 @@ VoteUASZ/
 │
 ├── .env.example                        # Modèle des variables d'environnement (versionné)
 ├── docker-compose.yml                  # PostgreSQL + Mailhog + Backend
-└── Dockerfile                          # Multi-stage build (Maven → JRE 21 slim)
+├── Dockerfile                          # Multi-stage build (Angular + Maven → JRE 21 Alpine)
+├── render.yaml                         # Blueprint Render (Backend Docker + PostgreSQL)
+└── vercel.json                         # Configuration Vercel (SPA Angular + proxy /api)
 ```
 
 ---
@@ -322,7 +325,9 @@ npm test
 
 ## Déploiement Cloud
 
-> **URL de démo : À REMPLIR APRÈS DÉPLOIEMENT**
+> **URL de démo (Production) :**
+> - **Frontend (Vercel)** : https://vote-uasz-frontend.vercel.app
+> - **Backend API (Render)** : https://voteuasz-backend-r5cn.onrender.com
 
 Les fichiers d'infrastructure fournis à la racine permettent un déploiement gratuit en quelques minutes :
 - [`render.yaml`](./render.yaml) — Blueprint Render (Web Service Docker + PostgreSQL managé gratuit)
@@ -341,7 +346,7 @@ Les fichiers d'infrastructure fournis à la racine permettent un déploiement gr
 | Variable | Description |
 |---|---|
 | `SPRING_PROFILES_ACTIVE` | `prod` (défini dans `render.yaml`) |
-| `SPRING_DATASOURCE_URL` | Injecté automatiquement depuis `voteuasz-db` |
+| `SPRING_DATASOURCE_HOST` / `PORT` / `DB` | Injectés automatiquement depuis `voteuasz-db` (`application-prod.yml` construit l'URL `jdbc:postgresql://...`) |
 | `SPRING_DATASOURCE_USERNAME` | Injecté automatiquement depuis `voteuasz-db` |
 | `SPRING_DATASOURCE_PASSWORD` | Injecté automatiquement depuis `voteuasz-db` |
 | `JWT_SECRET` | Généré automatiquement par Render (clé >= 256 bits) |
@@ -349,12 +354,12 @@ Les fichiers d'infrastructure fournis à la racine permettent un déploiement gr
 | `AUDIT_IP_SALT` | Généré automatiquement par Render (sel pour le hachage des IP dans le journal d'émargement) |
 | `DEFAULT_ELECTEUR_PASSWORD` | `sync: false` — Mot de passe attribué aux électeurs importés via CSV (12+ car., fort) |
 | `DEFAULT_CANDIDAT_PASSWORD` | `sync: false` — Mot de passe attribué aux candidats importés via CSV (12+ car., fort) |
-| `ALLOWED_ORIGINS` | `sync: false` — URL Vercel du frontend (ex : `https://voteuasz.vercel.app`) |
-| `SPRING_MAIL_HOST` | `sync: false` — Hôte SMTP de production (ex : `smtp.gmail.com` ou Resend/Brevo) |
+| `ALLOWED_ORIGINS` | `sync: false` — URL Vercel du frontend (ex : `https://vote-uasz-frontend.vercel.app`) |
+| `SPRING_MAIL_HOST` | `sync: false` — Hôte SMTP de production (ex : `smtp-relay.brevo.com` ou `smtp.gmail.com`) |
 | `SPRING_MAIL_PORT` | `587` |
-| `SPRING_MAIL_USERNAME` | `sync: false` — Adresse email d'envoi |
+| `SPRING_MAIL_USERNAME` | `sync: false` — Adresse email d'envoi / compte SMTP |
 | `SPRING_MAIL_PASSWORD` | `sync: false` — Mot de passe / clé API SMTP |
-| `ADMIN_MATRICULE` | `sync: false` — Matricule du premier SUPER_ADMIN (ex : `ADMIN001`) |
+| `ADMIN_MATRICULE` | `sync: false` — Matricule du premier SUPER_ADMIN (ex : `ADM001`) |
 | `ADMIN_EMAIL` | `sync: false` — Email du premier SUPER_ADMIN (ex : `admin@voteuasz.sn`) |
 | `ADMIN_PASSWORD` | `sync: false` — Mot de passe initial (12+ car., 1 maj, 1 min, 1 chiffre, 1 symbole) |
 
@@ -369,10 +374,10 @@ Les fichiers d'infrastructure fournis à la racine permettent un déploiement gr
 <details>
 <summary>Voir le guide de déploiement</summary>
 
-1. Importez le dépôt sur [Vercel](https://vercel.com) (la racine contient `vercel.json`)
-2. Mettez à jour l'URL de destination `/api/(.*)` dans `vercel.json` avec l'URL Render de votre backend
+1. Importez le dépôt sur [Vercel](https://vercel.com) en conservant le **Root Directory** à la racine `.` (qui contient `vercel.json`) et le preset **Other**
+2. Vérifiez que l'URL Render du backend est renseignée dans `vercel.json` (`/api/(.*)`) et dans `frontend/src/environments/environment.prod.ts` (`wsUrl` en `wss://...`)
 3. Déployez : Vercel exécute `cd frontend && npm ci && npx ng build --configuration production` et publie `frontend/dist/voteuasz-frontend/browser`
-4. Ajoutez l'URL Vercel obtenue dans `ALLOWED_ORIGINS` sur Render et dans la section **URL de démo** ci-dessus
+4. Renseignez l'URL Vercel obtenue dans `ALLOWED_ORIGINS` sur Render
 
 </details>
 
