@@ -24,11 +24,11 @@ import java.time.LocalDateTime;
 
 /**
  * Initialiseur de données de démonstration au démarrage de l'application VoteUASZ.
- * Actif uniquement en mode hors-test (@Profile("!test")).
+ * Actif uniquement en mode développement (@Profile("dev")).
  */
 @Slf4j
 @Component
-@Profile("!test")
+@Profile("dev")
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 

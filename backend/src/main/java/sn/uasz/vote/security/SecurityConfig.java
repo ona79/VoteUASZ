@@ -34,6 +34,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final org.springframework.core.env.Environment environment;
 
     @Value("${app.cors.allowed-origins:http://localhost:4200,http://localhost:8080}")
     private List<String> allowedOrigins;
@@ -94,7 +95,17 @@ public class SecurityConfig {
                             response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentification requise\"}");
                         })
                 )
-                .headers(headers -> headers.frameOptions(frame -> frame.disable())); // Pour la console H2
+                .headers(headers -> {
+                    if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("dev"))) {
+                        headers.frameOptions(frame -> frame.disable()); // Console H2 en dev uniquement
+                    } else {
+                        headers.frameOptions(frame -> frame.deny());
+                    }
+                    headers.contentTypeOptions(Customizer.withDefaults()); // X-Content-Type-Options: nosniff
+                    headers.referrerPolicy(ref -> ref.policy(
+                            org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN
+                    ));
+                });
 
         http.addFilterBefore(rateLimitingFilter(), UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
