@@ -88,21 +88,21 @@ import { NotificationService } from '../../services/notification.service';
 
           <!-- Dynamic Quick Selector for Testing -->
           <div class="mt-8 pt-5 border-t border-slate-100">
-            <p class="text-[9px] text-slate-400 uppercase font-extrabold tracking-wider text-center mb-3">Comptes de Démo (Dev)</p>
+            <p class="text-[9px] text-slate-400 uppercase font-extrabold tracking-wider text-center mb-3">Comptes de Démo</p>
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 text-[10px]">
-              <button (click)="fillDemo('ADMIN001', 'AdminSecure2026!')" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-white hover:border-[#1d4ed8] hover:text-[#1d4ed8] hover:shadow-md transition-all text-center group">
+              <button (click)="fillDemo('ADM001', 'MonAdmin@2026!')" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-white hover:border-[#1d4ed8] hover:text-[#1d4ed8] hover:shadow-md transition-all text-center group">
                 <lucide-icon name="shield" class="w-4 h-4 mb-1 mx-auto text-[#1d4ed8] group-hover:scale-110 transition-transform"></lucide-icon>
                 <b class="block text-[10px]">Super-Admin</b>
               </button>
-              <button (click)="fillDemo('COMM001', 'CommSecure2026!')" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-white hover:border-[#047857] hover:text-[#047857] hover:shadow-md transition-all text-center group">
+              <button (click)="fillDemo('COMM001', 'Electeur@2026!')" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-white hover:border-[#047857] hover:text-[#047857] hover:shadow-md transition-all text-center group">
                 <lucide-icon name="landmark" class="w-4 h-4 mb-1 mx-auto text-emerald-600 group-hover:scale-110 transition-transform"></lucide-icon>
                 <b class="block text-[10px]">Commission</b>
               </button>
-              <button (click)="fillDemo('CAND202301', 'CandSecure2026!')" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-white hover:border-slate-800 hover:text-slate-900 hover:shadow-md transition-all text-center group">
+              <button (click)="fillDemo('CAND202301', 'Candidat@2026!')" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-white hover:border-slate-800 hover:text-slate-900 hover:shadow-md transition-all text-center group">
                 <lucide-icon name="megaphone" class="w-4 h-4 mb-1 mx-auto text-slate-700 group-hover:scale-110 transition-transform"></lucide-icon>
                 <b class="block text-[10px]">Candidat</b>
               </button>
-              <button (click)="fillDemo('20230001', 'ElecteurSecure2026!')" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-white hover:border-[#047857] hover:text-[#047857] hover:shadow-md transition-all text-center group">
+              <button (click)="fillDemo('20230001', 'Electeur@2026!')" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 hover:bg-white hover:border-[#047857] hover:text-[#047857] hover:shadow-md transition-all text-center group">
                 <lucide-icon name="vote" class="w-4 h-4 mb-1 mx-auto text-emerald-600 group-hover:scale-110 transition-transform"></lucide-icon>
                 <b class="block text-[10px]">Électeur L3</b>
               </button>

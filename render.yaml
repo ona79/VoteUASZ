@@ -17,10 +17,20 @@ services:
         value: prod
 
       # Base de données PostgreSQL (injectée automatiquement depuis voteuasz-db)
-      - key: SPRING_DATASOURCE_URL
+      # Render injecte connectionString au format postgresql:// (non accepté par JDBC).
+      # On injecte host/port/database séparément et application-prod.yml construit l'URL jdbc:postgresql://.
+      - key: SPRING_DATASOURCE_HOST
         fromDatabase:
           name: voteuasz-db
-          property: connectionString
+          property: host
+      - key: SPRING_DATASOURCE_PORT
+        fromDatabase:
+          name: voteuasz-db
+          property: port
+      - key: SPRING_DATASOURCE_DB
+        fromDatabase:
+          name: voteuasz-db
+          property: database
       - key: SPRING_DATASOURCE_USERNAME
         fromDatabase:
           name: voteuasz-db

@@ -11,7 +11,7 @@
 export const environment = {
   production: true,
   /** URL de base pour les WebSockets STOMP — pointe directement vers Render (bypass Vercel). */
-  wsUrl: 'wss://REMPLACER-PAR-URL-RENDER',
+  wsUrl: 'wss://voteuasz-backend-r5cn.onrender.com',
   /** URL de base pour les appels HTTP API. Vide = relatif (passe par le rewrite de vercel.json). */
   apiUrl: ''
 };

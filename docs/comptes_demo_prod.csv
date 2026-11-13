@@ -1,0 +1,4 @@
+matricule,nom,prenom,email,telephone,role,typeElecteur,ufr,filiere,niveau
+COMM001,Sow,Président Commission,commission@uasz.sn,770000001,COMMISSION_ELECTORALE,PER_ADMIN,ADMIN,Administration,N/A
+CAND202301,Ndiaye,Moussa,moussa.ndiaye@uasz.sn,770000002,CANDIDAT,ETUDIANT,Sciences et Technologies,Informatique,L3
+20230001,Diop,Aminata,aminata.diop@uasz.sn,770000003,ELECTEUR,ETUDIANT,Sciences et Technologies,Informatique,L3

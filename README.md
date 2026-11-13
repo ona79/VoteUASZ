@@ -1,8 +1,28 @@
+<div align="center">
+
+<img src="./frontend/src/assets/logo_vote_uasz.webp" alt="Logo VoteUASZ" width="110" />
+
 # VoteUASZ — Plateforme d'Élections Universitaires
 
-Système de vote électronique sécurisé, mobile-first, développé pour l'**Université Assane Seck de Ziguinchor (UASZ)**.
+**Système de vote électronique sécurisé, chiffré de bout en bout (AES-256) et mobile-first, développé pour l'Université Assane Seck de Ziguinchor (UASZ).**
 
-**Stack :** Java 21 · Spring Boot 3 · Angular 17 · PostgreSQL 16 · Docker · WebSocket STOMP · AES-256
+[![VoteUASZ CI](https://github.com/ona79/VoteUASZ/actions/workflows/ci.yml/badge.svg)](https://github.com/ona79/VoteUASZ/actions/workflows/ci.yml)
+[![Frontend Vercel](https://img.shields.io/badge/Frontend-Vercel-000000?logo=vercel&logoColor=white)](https://vote-uasz-frontend.vercel.app)
+[![Backend Render](https://img.shields.io/badge/Backend-Render-46E3B7?logo=render&logoColor=black)](https://voteuasz-backend-r5cn.onrender.com/api/v1/elections)
+
+![Java 21](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot 3](https://img.shields.io/badge/Spring%20Boot-3.2-6DB33F?logo=springboot&logoColor=white)
+![Angular 17](https://img.shields.io/badge/Angular-17-DD0031?logo=angular&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-06B6D4?logo=tailwindcss&logoColor=white)
+![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Multi--Stage-2496ED?logo=docker&logoColor=white)
+
+<br/>
+
+**[🌐 Accéder à la plateforme](https://vote-uasz-frontend.vercel.app)** · **[⚡ API Backend](https://voteuasz-backend-r5cn.onrender.com/api/v1/elections)** · **[📘 Spécification OpenAPI](./docs/openapi.yaml)**
+
+</div>
 
 ---
 
@@ -120,6 +140,7 @@ VoteUASZ/
 │       ├── services/                   # auth · election · vote · websocket · notification · complaint · candidacy
 │       ├── guards/                     # authGuard · roleGuard
 │       ├── interceptors/               # jwt.interceptor (injection JWT + gestion session expirée)
+│       ├── environments/               # Configuration dev / prod (apiUrl, wsUrl)
 │       └── models/                     # Interfaces TypeScript
 │
 ├── docs/
@@ -128,7 +149,9 @@ VoteUASZ/
 │
 ├── .env.example                        # Modèle des variables d'environnement (versionné)
 ├── docker-compose.yml                  # PostgreSQL + Mailhog + Backend
-└── Dockerfile                          # Multi-stage build (Maven → JRE 21 slim)
+├── Dockerfile                          # Multi-stage build (Angular + Maven → JRE 21 Alpine)
+├── render.yaml                         # Blueprint Render (Backend Docker + PostgreSQL)
+└── vercel.json                         # Configuration Vercel (SPA Angular + proxy /api)
 ```
 
 ---
@@ -198,7 +221,18 @@ npm start
 
 ## Comptes de Démonstration
 
-> Ces comptes sont initialisés automatiquement au premier démarrage via `DataInitializer`.
+### Production (Démo en ligne — Vercel / Render)
+
+> Ces comptes sont accessibles directement via les boutons rapides sur la page de connexion (`https://vote-uasz-frontend.vercel.app/login`).
+
+| Rôle | Identifiant | Mot de Passe |
+|---|---|---|
+| Super-Admin Electoral | `ADM001` | `MonAdmin@2026!` |
+| Commission Electorale | `COMM001` | `Electeur@2026!` |
+| Candidat | `CAND202301` | `Candidat@2026!` |
+| Electeur (Etudiant L3) | `20230001` | `Electeur@2026!` |
+
+### Développement local (`DataInitializer`, profil `dev`)
 
 | Rôle | Identifiant | Mot de Passe |
 |---|---|---|
@@ -322,7 +356,9 @@ npm test
 
 ## Déploiement Cloud
 
-> **URL de démo : À REMPLIR APRÈS DÉPLOIEMENT**
+> **URL de démo (Production) :**
+> - **Frontend (Vercel)** : https://vote-uasz-frontend.vercel.app
+> - **Backend API (Render)** : https://voteuasz-backend-r5cn.onrender.com
 
 Les fichiers d'infrastructure fournis à la racine permettent un déploiement gratuit en quelques minutes :
 - [`render.yaml`](./render.yaml) — Blueprint Render (Web Service Docker + PostgreSQL managé gratuit)
@@ -341,7 +377,7 @@ Les fichiers d'infrastructure fournis à la racine permettent un déploiement gr
 | Variable | Description |
 |---|---|
 | `SPRING_PROFILES_ACTIVE` | `prod` (défini dans `render.yaml`) |
-| `SPRING_DATASOURCE_URL` | Injecté automatiquement depuis `voteuasz-db` |
+| `SPRING_DATASOURCE_HOST` / `PORT` / `DB` | Injectés automatiquement depuis `voteuasz-db` (`application-prod.yml` construit l'URL `jdbc:postgresql://...`) |
 | `SPRING_DATASOURCE_USERNAME` | Injecté automatiquement depuis `voteuasz-db` |
 | `SPRING_DATASOURCE_PASSWORD` | Injecté automatiquement depuis `voteuasz-db` |
 | `JWT_SECRET` | Généré automatiquement par Render (clé >= 256 bits) |
@@ -349,12 +385,12 @@ Les fichiers d'infrastructure fournis à la racine permettent un déploiement gr
 | `AUDIT_IP_SALT` | Généré automatiquement par Render (sel pour le hachage des IP dans le journal d'émargement) |
 | `DEFAULT_ELECTEUR_PASSWORD` | `sync: false` — Mot de passe attribué aux électeurs importés via CSV (12+ car., fort) |
 | `DEFAULT_CANDIDAT_PASSWORD` | `sync: false` — Mot de passe attribué aux candidats importés via CSV (12+ car., fort) |
-| `ALLOWED_ORIGINS` | `sync: false` — URL Vercel du frontend (ex : `https://voteuasz.vercel.app`) |
-| `SPRING_MAIL_HOST` | `sync: false` — Hôte SMTP de production (ex : `smtp.gmail.com` ou Resend/Brevo) |
+| `ALLOWED_ORIGINS` | `sync: false` — URL Vercel du frontend (ex : `https://vote-uasz-frontend.vercel.app`) |
+| `SPRING_MAIL_HOST` | `sync: false` — Hôte SMTP de production (ex : `smtp-relay.brevo.com` ou `smtp.gmail.com`) |
 | `SPRING_MAIL_PORT` | `587` |
-| `SPRING_MAIL_USERNAME` | `sync: false` — Adresse email d'envoi |
+| `SPRING_MAIL_USERNAME` | `sync: false` — Adresse email d'envoi / compte SMTP |
 | `SPRING_MAIL_PASSWORD` | `sync: false` — Mot de passe / clé API SMTP |
-| `ADMIN_MATRICULE` | `sync: false` — Matricule du premier SUPER_ADMIN (ex : `ADMIN001`) |
+| `ADMIN_MATRICULE` | `sync: false` — Matricule du premier SUPER_ADMIN (ex : `ADM001`) |
 | `ADMIN_EMAIL` | `sync: false` — Email du premier SUPER_ADMIN (ex : `admin@voteuasz.sn`) |
 | `ADMIN_PASSWORD` | `sync: false` — Mot de passe initial (12+ car., 1 maj, 1 min, 1 chiffre, 1 symbole) |
 
@@ -369,10 +405,10 @@ Les fichiers d'infrastructure fournis à la racine permettent un déploiement gr
 <details>
 <summary>Voir le guide de déploiement</summary>
 
-1. Importez le dépôt sur [Vercel](https://vercel.com) (la racine contient `vercel.json`)
-2. Mettez à jour l'URL de destination `/api/(.*)` dans `vercel.json` avec l'URL Render de votre backend
+1. Importez le dépôt sur [Vercel](https://vercel.com) en conservant le **Root Directory** à la racine `.` (qui contient `vercel.json`) et le preset **Other**
+2. Vérifiez que l'URL Render du backend est renseignée dans `vercel.json` (`/api/(.*)`) et dans `frontend/src/environments/environment.prod.ts` (`wsUrl` en `wss://...`)
 3. Déployez : Vercel exécute `cd frontend && npm ci && npx ng build --configuration production` et publie `frontend/dist/voteuasz-frontend/browser`
-4. Ajoutez l'URL Vercel obtenue dans `ALLOWED_ORIGINS` sur Render et dans la section **URL de démo** ci-dessus
+4. Renseignez l'URL Vercel obtenue dans `ALLOWED_ORIGINS` sur Render
 
 </details>
 
