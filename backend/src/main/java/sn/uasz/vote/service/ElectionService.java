@@ -103,17 +103,9 @@ public class ElectionService {
                 .orElseThrow(() -> new IllegalArgumentException("Élection non trouvée ID: " + id));
     }
 
-    public boolean isUserEligible(User user, Election election) {
-        if (user == null || election == null || !user.isActive()) return false;
-
-        return switch (election.getType()) {
-            case DELEGUE -> (election.getTargetUfr() == null || election.getTargetUfr().equalsIgnoreCase(user.getUfr())) &&
-                            (election.getTargetFiliere() == null || election.getTargetFiliere().equalsIgnoreCase(user.getFiliere())) &&
-                            (election.getTargetNiveau() == null || election.getTargetNiveau().equalsIgnoreCase(user.getNiveau()));
-            case DUFR -> (election.getTargetUfr() == null || election.getTargetUfr().equalsIgnoreCase(user.getUfr()));
-            case VICE_RECTEUR -> true; // Tous les membres actifs de l'UASZ
-        };
-    }
+    // NB : la vérification d'éligibilité est centralisée dans EligibilityService (ancienne
+    // méthode isUserEligible() supprimée car dupliquée et incomplète : elle ignorait la
+    // restriction ETUDIANT des scrutins DELEGUE).
 
     public ElectionDto mapToDto(Election election) {
         return ElectionDto.builder()
