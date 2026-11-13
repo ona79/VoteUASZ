@@ -43,14 +43,20 @@ public class ComplaintService {
                 .orElseThrow(() -> new IllegalArgumentException("Élection non trouvée: " + dto.getElectionId()));
 
         // ── Vérification du délai légal de contestation ───────────────────────
-        // Si l'élection est clôturée et que dateFin + 48h est dépassé, on refuse
-        if (election.getStatut() == ElectionStatus.CLOTURE && election.getDateFin() != null) {
-            LocalDateTime deadlineContestatiion = election.getDateFin().plusHours(DELAI_LEGAL_HEURES);
-            if (LocalDateTime.now().isAfter(deadlineContestatiion)) {
+        // Dépôt autorisé uniquement après PUBLICATION ou CLOTURE, et dans les 48h après dateFin
+        if (election.getStatut() != ElectionStatus.PUBLICATION && election.getStatut() != ElectionStatus.CLOTURE) {
+            throw new IllegalStateException(
+                    "Les réclamations ne sont autorisées qu'après la publication ou la clôture du scrutin (statut actuel : "
+                    + election.getStatut() + ")."
+            );
+        }
+        if (election.getDateFin() != null) {
+            LocalDateTime deadlineContestation = election.getDateFin().plusHours(DELAI_LEGAL_HEURES);
+            if (LocalDateTime.now().isAfter(deadlineContestation)) {
                 throw new IllegalStateException(
                         "Le délai légal de réclamation est expiré. Les contestations sont acceptées "
                         + "jusqu'à " + DELAI_LEGAL_HEURES + "h après la clôture du scrutin (avant le "
-                        + deadlineContestatiion.toLocalDate() + ")."
+                        + deadlineContestation.toLocalDate() + ")."
                 );
             }
         }

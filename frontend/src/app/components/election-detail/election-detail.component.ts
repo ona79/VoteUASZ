@@ -782,8 +782,6 @@ export class ElectionDetailComponent implements OnInit, OnDestroy {
     this.electionId = Number(this.route.snapshot.paramMap.get('id'));
     this.fetchData();
 
-    // Connect WebSocket for live results
-    this.wsService.connect(this.electionId);
     this.wsService.results$.subscribe((results) => {
       if (results) this.liveResults = results;
     });
@@ -793,39 +791,48 @@ export class ElectionDetailComponent implements OnInit, OnDestroy {
     this.wsService.disconnect();
   }
 
+  private canViewLiveResults(statut?: string): boolean {
+    if (!this.authService.isLoggedIn()) return false;
+    if (this.isSupervisor()) return true;
+    return statut === 'DEPOUILLEMENT' || statut === 'PUBLICATION' || statut === 'CLOTURE';
+  }
+
   fetchData(): void {
     this.electionService.getElection(this.electionId).subscribe({
-      next: (data) => this.election = data,
+      next: (data) => {
+        this.election = data;
+        if (this.canViewLiveResults(data.statut)) {
+          this.wsService.connect(this.electionId);
+          this.electionService.getLiveResults(this.electionId).subscribe({
+            next: (res) => this.liveResults = res,
+            error: (err) => console.error('WebSocket / Live initial fetch error', err)
+          });
+        }
+      },
       error: () => this.notificationService.showError("Scrutin introuvable.")
     });
 
-    this.electionService.getCandidatures(this.electionId).subscribe({
-      next: (data) => {
-        this.candidatures = data;
-        // Charger les publications de campagne de l'élection
-        this.electionService.getCampaignPostsByElection(this.electionId).subscribe({
-          next: (posts) => {
-            if (posts && posts.length > 0 && this.candidatures) {
-              this.candidatures.forEach(c => {
-                const cPosts = posts.filter(p => p.candidatureId === c.id);
-                if (cPosts.length > 0) {
-                  c.posts = cPosts;
-                }
-              });
-            }
-          },
-          error: (err) => console.error('Erreur lors du chargement des posts de campagne:', err)
-        });
-      },
-      error: () => this.notificationService.showError("Erreur lors de la récupération des candidatures.")
-    });
-
-    this.electionService.getLiveResults(this.electionId).subscribe({
-      next: (data) => this.liveResults = data,
-      error: (err) => console.error('WebSocket / Live initial fetch error', err)
-    });
-
     if (this.authService.isLoggedIn()) {
+      this.electionService.getCandidatures(this.electionId).subscribe({
+        next: (data) => {
+          this.candidatures = data;
+          this.electionService.getCampaignPostsByElection(this.electionId).subscribe({
+            next: (posts) => {
+              if (posts && posts.length > 0 && this.candidatures) {
+                this.candidatures.forEach(c => {
+                  const cPosts = posts.filter(p => p.candidatureId === c.id);
+                  if (cPosts.length > 0) {
+                    c.posts = cPosts;
+                  }
+                });
+              }
+            },
+            error: (err) => console.error('Erreur lors du chargement des posts de campagne:', err)
+          });
+        },
+        error: () => this.notificationService.showError("Erreur lors de la récupération des candidatures.")
+      });
+
       this.electionService.getVoteStatus(this.electionId).subscribe({
         next: (status) => {
           this.hasAlreadyVoted = status.hasVoted;

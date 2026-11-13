@@ -1,5 +1,6 @@
 package sn.uasz.vote.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,8 +30,21 @@ public class ElectionController {
 
     @PostMapping
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<ElectionDto> createElection(@RequestBody ElectionDto dto) {
+    public ResponseEntity<ElectionDto> createElection(@Valid @RequestBody ElectionDto dto) {
         return ResponseEntity.ok(electionService.createElection(dto));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ElectionDto> updateElection(@PathVariable Long id, @Valid @RequestBody ElectionDto dto) {
+        return ResponseEntity.ok(electionService.updateElection(id, dto));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<Void> deleteElection(@PathVariable Long id) {
+        electionService.deleteElection(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}/status")

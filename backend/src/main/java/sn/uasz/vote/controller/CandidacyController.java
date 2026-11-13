@@ -1,5 +1,6 @@
 package sn.uasz.vote.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,7 +20,7 @@ public class CandidacyController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'CANDIDAT')")
-    public ResponseEntity<CandidatureDto> submitCandidacy(@RequestBody CandidatureDto dto, Authentication auth) {
+    public ResponseEntity<CandidatureDto> submitCandidacy(@Valid @RequestBody CandidatureDto dto, Authentication auth) {
         return ResponseEntity.ok(candidacyService.submitCandidacy(dto, auth.getName()));
     }
 
@@ -30,8 +31,12 @@ public class CandidacyController {
     }
 
     @GetMapping("/election/{electionId}")
-    public ResponseEntity<List<CandidatureDto>> getCandidacies(@PathVariable Long electionId) {
-        return ResponseEntity.ok(candidacyService.getCandidaciesByElection(electionId));
+    public ResponseEntity<List<CandidatureDto>> getCandidacies(@PathVariable Long electionId, Authentication auth) {
+        boolean isPrivileged = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_SUPER_ADMIN".equals(a.getAuthority())
+                        || "ROLE_COMMISSION_ELECTORALE".equals(a.getAuthority()));
+        String matricule = auth != null ? auth.getName() : null;
+        return ResponseEntity.ok(candidacyService.getCandidaciesByElectionForUser(electionId, matricule, isPrivileged));
     }
 
     @GetMapping("/election/{electionId}/approved")

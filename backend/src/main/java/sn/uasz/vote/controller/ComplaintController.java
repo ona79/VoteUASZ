@@ -1,5 +1,6 @@
 package sn.uasz.vote.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,7 +21,7 @@ public class ComplaintController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ELECTEUR', 'CANDIDAT')")
-    public ResponseEntity<ComplaintDto> submitComplaint(@RequestBody ComplaintDto dto, Authentication auth) {
+    public ResponseEntity<ComplaintDto> submitComplaint(@Valid @RequestBody ComplaintDto dto, Authentication auth) {
         return ResponseEntity.ok(complaintService.submitComplaint(dto, auth.getName()));
     }
 

@@ -1,5 +1,6 @@
 package sn.uasz.vote.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,7 +22,7 @@ public class CampaignController {
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'CANDIDAT')")
     public ResponseEntity<CampaignPostDto> createPost(
             @PathVariable(required = false) Long candidatureId,
-            @RequestBody CampaignPostDto dto,
+            @Valid @RequestBody CampaignPostDto dto,
             Authentication auth) {
         if (candidatureId != null) {
             dto.setCandidatureId(candidatureId);

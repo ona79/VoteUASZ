@@ -161,3 +161,4 @@ class VoteWindowAndTokenBindingTest {
         assertEquals(1, ballotRepository.countByElectionId(ids[0]));
     }
 }
+

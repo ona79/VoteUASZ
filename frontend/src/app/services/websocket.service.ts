@@ -1,22 +1,25 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Client, IMessage } from '@stomp/stompjs';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { LiveResultsDto } from '../models/vote.models';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WebSocketService {
+  private authService = inject(AuthService);
   private stompClient: Client | null = null;
   private resultsSubject = new BehaviorSubject<LiveResultsDto | null>(null);
   public results$: Observable<LiveResultsDto | null> = this.resultsSubject.asObservable();
 
   connect(electionId: number): void {
-    // Correction du mismatch: /ws correspond à l'endpoint déclaré dans WebSocketConfig.java
     const wsUrl = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws';
+    const token = this.authService.getToken();
 
     this.stompClient = new Client({
       brokerURL: wsUrl,
+      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
