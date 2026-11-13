@@ -2,6 +2,7 @@ package sn.uasz.vote.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -24,6 +25,8 @@ import sn.uasz.vote.repository.ElectionRepository;
 import sn.uasz.vote.security.CustomUserDetailsService;
 import sn.uasz.vote.security.JwtTokenProvider;
 
+import java.util.List;
+
 @Slf4j
 @Configuration
 @EnableWebSocketMessageBroker
@@ -36,6 +39,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final CustomUserDetailsService userDetailsService;
     private final ElectionRepository electionRepository;
 
+    @Value("${app.cors.allowed-origins:http://localhost:4200,http://localhost:8080}")
+    private List<String> allowedOrigins;
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic");
@@ -44,11 +50,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        String[] origins = allowedOrigins.toArray(String[]::new);
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOrigins(origins)
                 .withSockJS();
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*");
+                .setAllowedOrigins(origins);
     }
 
     @Override
