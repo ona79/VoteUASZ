@@ -34,3 +34,4 @@ public final class ClientIpResolver {
         return (remoteAddr != null && !remoteAddr.isBlank()) ? remoteAddr : "unknown";
     }
 }
+

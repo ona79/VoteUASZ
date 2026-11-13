@@ -76,3 +76,4 @@ de23439 LOT A — IP réelle derrière proxy Render (anti-spoofing)
 3. **WebSocket SockJS** : le backend expose `/ws` avec SockJS **et** en natif. Le frontend utilise `@stomp/stompjs` en mode natif (pas SockJS). Pas de changement nécessaire sur ce point.
 
 4. **`WebSocketConfig` origines** : passage de `setAllowedOriginPatterns("*")` à `setAllowedOrigins(origines)` basé sur `ALLOWED_ORIGINS`. En dev, les valeurs par défaut `http://localhost:4200,http://localhost:8080` sont utilisées. En prod, il faut que `ALLOWED_ORIGINS` sur Render contienne l'URL Vercel exacte.
+
