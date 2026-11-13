@@ -344,17 +344,23 @@ Les fichiers d'infrastructure fournis à la racine permettent un déploiement gr
 | `SPRING_DATASOURCE_URL` | Injecté automatiquement depuis `voteuasz-db` |
 | `SPRING_DATASOURCE_USERNAME` | Injecté automatiquement depuis `voteuasz-db` |
 | `SPRING_DATASOURCE_PASSWORD` | Injecté automatiquement depuis `voteuasz-db` |
-| `JWT_SECRET` | Généré automatiquement (ou clé >= 256 bits) |
-| `CRYPTO_SECRET` | Généré automatiquement (>= 32 caractères) |
-| `CRYPTO_SECRET_KEY` | Même valeur que `CRYPTO_SECRET` |
-| `AUDIT_IP_SALT` | Généré automatiquement (sel pour `ipHash`) |
-| `DEFAULT_ELECTEUR_PASSWORD` | Mot de passe attribué aux électeurs importés via CSV |
-| `DEFAULT_CANDIDAT_PASSWORD` | Mot de passe attribué aux candidats importés via CSV |
-| `ALLOWED_ORIGINS` | URL Vercel du frontend (ex : `https://voteuasz.vercel.app`) |
-| `SPRING_MAIL_HOST` | Hôte SMTP de production (ex : `smtp.gmail.com` ou Resend/Brevo) |
+| `JWT_SECRET` | Généré automatiquement par Render (clé >= 256 bits) |
+| `CRYPTO_SECRET` | Généré automatiquement par Render (>= 32 caractères, chiffrement AES-256 des bulletins) |
+| `AUDIT_IP_SALT` | Généré automatiquement par Render (sel pour le hachage des IP dans le journal d'émargement) |
+| `DEFAULT_ELECTEUR_PASSWORD` | `sync: false` — Mot de passe attribué aux électeurs importés via CSV (12+ car., fort) |
+| `DEFAULT_CANDIDAT_PASSWORD` | `sync: false` — Mot de passe attribué aux candidats importés via CSV (12+ car., fort) |
+| `ALLOWED_ORIGINS` | `sync: false` — URL Vercel du frontend (ex : `https://voteuasz.vercel.app`) |
+| `SPRING_MAIL_HOST` | `sync: false` — Hôte SMTP de production (ex : `smtp.gmail.com` ou Resend/Brevo) |
 | `SPRING_MAIL_PORT` | `587` |
-| `SPRING_MAIL_USERNAME` | Adresse email d'envoi |
-| `SPRING_MAIL_PASSWORD` | Mot de passe / clé API SMTP |
+| `SPRING_MAIL_USERNAME` | `sync: false` — Adresse email d'envoi |
+| `SPRING_MAIL_PASSWORD` | `sync: false` — Mot de passe / clé API SMTP |
+| `ADMIN_MATRICULE` | `sync: false` — Matricule du premier SUPER_ADMIN (ex : `ADMIN001`) |
+| `ADMIN_EMAIL` | `sync: false` — Email du premier SUPER_ADMIN (ex : `admin@voteuasz.sn`) |
+| `ADMIN_PASSWORD` | `sync: false` — Mot de passe initial (12+ car., 1 maj, 1 min, 1 chiffre, 1 symbole) |
+
+> **⚠️ Premier SUPER_ADMIN** : Au tout premier démarrage, si aucun `SUPER_ADMIN` n'existe en base, l'application crée automatiquement un compte à partir de `ADMIN_MATRICULE`, `ADMIN_EMAIL` et `ADMIN_PASSWORD`. **Si ces variables sont absentes, l'application refuse de démarrer.** Après la première connexion, changez le mot de passe via votre profil. Les variables `ADMIN_*` peuvent ensuite être supprimées sur Render (elles seront ignorées aux redémarrages suivants).
+
+> **Note** : `CRYPTO_SECRET_KEY` a été supprimé. Utilisez uniquement `CRYPTO_SECRET`.
 
 </details>
 

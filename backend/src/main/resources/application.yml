@@ -57,6 +57,11 @@ app:
     ip-salt: ${AUDIT_IP_SALT:${CRYPTO_SECRET:VoteUASZ-Default-IP-Salt}}
   default-electeur-password: ${DEFAULT_ELECTEUR_PASSWORD}
   default-candidat-password: ${DEFAULT_CANDIDAT_PASSWORD}
+  # Bootstrap du premier SUPER_ADMIN — utilisé uniquement si aucun SUPER_ADMIN n'existe en base
+  bootstrap-admin:
+    matricule: ${ADMIN_MATRICULE:}
+    email: ${ADMIN_EMAIL:}
+    password: ${ADMIN_PASSWORD:}
 
 springdoc:
   api-docs:

@@ -121,7 +121,7 @@ class CryptoServiceTest {
     @DisplayName("LOT B — validateAndInitKey() réussit avec une clé d'exactement 32 caractères")
     void validateAndInitKey_succeedsWithMinimumLength() {
         CryptoService service = new CryptoService();
-        ReflectionTestUtils.setField(service, "secretKey", "ExactlyThirtyTwoCharsLong!!!!!!");
+        ReflectionTestUtils.setField(service, "secretKey", "ExactlyThirtyTwoCharactersLong!!");  // 32 chars
 
         assertDoesNotThrow(service::validateAndInitKey,
                 "Une clé de 32 caractères exactement doit être acceptée");
