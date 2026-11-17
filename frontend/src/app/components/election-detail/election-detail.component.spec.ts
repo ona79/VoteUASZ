@@ -1,7 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { ElectionDetailComponent } from './election-detail.component';
+import { provideLucideTestIcons } from '../../../testing/test-providers';
 import { ElectionService } from '../../services/election.service';
 import { VoteService } from '../../services/vote.service';
 import { WebSocketService } from '../../services/websocket.service';
@@ -59,7 +62,10 @@ describe('ElectionDetailComponent', () => {
     await TestBed.configureTestingModule({
       imports: [ElectionDetailComponent],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         provideRouter([]),
+        provideLucideTestIcons(),
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '1' } } } },
         { provide: ElectionService, useValue: electionServiceSpy },
         { provide: VoteService, useValue: jasmine.createSpyObj('VoteService', ['requestOtp', 'verifyOtp', 'submitVote']) },
