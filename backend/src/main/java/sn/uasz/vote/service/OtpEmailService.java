@@ -62,15 +62,33 @@ public class OtpEmailService {
             log.info("=================================================");
         }
 
+        String htmlBody = buildHtmlBody(electionTitre, otpCode);
+        dispatchEmail(toEmail, "VoteUASZ — Code de vote sécurisé", htmlBody);
+    }
+
+    /**
+     * Envoie un code de réinitialisation de mot de passe par e-mail.
+     * Le code est strictement masqué dans les logs en profil prod.
+     */
+    public void sendPasswordResetEmail(String toEmail, String resetCode) {
+        boolean isProd = environment.acceptsProfiles(Profiles.of("prod"));
+        if (isProd) {
+            log.info("🔑 [RESET VOTEUASZ] Code de réinitialisation généré pour {} : [MASQUÉ EN PROD]", toEmail);
+        } else {
+            log.info("🔑 [RESET VOTEUASZ] Code de réinitialisation généré pour {} : {}", toEmail, resetCode);
+        }
+        String htmlBody = buildPasswordResetHtmlBody(resetCode);
+        dispatchEmail(toEmail, "VoteUASZ — Réinitialisation de mot de passe", htmlBody);
+    }
+
+    private void dispatchEmail(String toEmail, String subject, String htmlBody) {
         String sender = (fromAddress != null && !fromAddress.trim().isEmpty())
                 ? fromAddress.trim()
                 : "noreply@voteuasz.sn";
 
-        String htmlBody = buildHtmlBody(electionTitre, otpCode);
-
         // Priorité à l'API HTTPS Brevo si BREVO_API_KEY est configurée (contourne le blocage SMTP de Render Free)
         if (brevoApiKey != null && !brevoApiKey.trim().isEmpty()) {
-            sendViaBrevoHttpApi(sender, toEmail, htmlBody);
+            sendViaBrevoHttpApi(sender, toEmail, subject, htmlBody);
             return;
         }
 
@@ -85,22 +103,22 @@ public class OtpEmailService {
 
             helper.setFrom(sender);
             helper.setTo(toEmail);
-            helper.setSubject("VoteUASZ — Code de vote sécurisé");
+            helper.setSubject(subject);
             helper.setText(htmlBody, true);
             mailSender.send(message);
             log.info("[OTP] Email envoyé avec succès à {} via SMTP.", toEmail);
 
         } catch (Exception e) {
-            log.warn("[OTP SMTP WARNING] Impossible d'acheminer l'email via SMTP ({}) - Utiliser le code OTP consigné dans la console.", e.getMessage());
+            log.warn("[OTP SMTP WARNING] Impossible d'acheminer l'email via SMTP ({}) - Utiliser le code consigné dans la console.", e.getMessage());
         }
     }
 
-    private void sendViaBrevoHttpApi(String sender, String toEmail, String htmlBody) {
+    private void sendViaBrevoHttpApi(String sender, String toEmail, String subject, String htmlBody) {
         try {
             Map<String, Object> payload = Map.of(
                     "sender", Map.of("name", "VoteUASZ", "email", sender),
                     "to", List.of(Map.of("email", toEmail)),
-                    "subject", "VoteUASZ — Code de vote sécurisé",
+                    "subject", subject,
                     "htmlContent", htmlBody
             );
             String json = objectMapper.writeValueAsString(payload);
@@ -154,5 +172,28 @@ public class OtpEmailService {
                       </div>
                     </div>
                     """.formatted(electionTitre, otpCode);
+    }
+
+    private String buildPasswordResetHtmlBody(String resetCode) {
+        return """
+                    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                      <div style="background: linear-gradient(135deg, #047857, #065f46); padding: 24px; text-align: center;">
+                        <h1 style="color: white; margin: 0; font-size: 20px; font-weight: 900;">
+                          🔐 VoteUASZ — Réinitialisation du mot de passe
+                        </h1>
+                      </div>
+                      <div style="padding: 28px 24px;">
+                        <p style="color: #64748b; font-size: 13px; margin-bottom: 20px;">
+                          Votre code de réinitialisation à usage unique, valable <strong>15 minutes</strong> :
+                        </p>
+                        <div style="background: #f8fafc; border: 2px solid #047857; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px;">
+                          <span style="font-size: 36px; font-weight: 900; letter-spacing: 12px; color: #047857; font-family: monospace;">%s</span>
+                        </div>
+                        <p style="color: #94a3b8; font-size: 11px; text-align: center;">
+                          Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.
+                        </p>
+                      </div>
+                    </div>
+                    """.formatted(resetCode);
     }
 }

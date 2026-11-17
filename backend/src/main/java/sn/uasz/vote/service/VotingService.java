@@ -182,16 +182,21 @@ public class VotingService {
             throw new IllegalArgumentException("Candidature non valide pour cette élection.");
         }
 
-        // 1. Chiffrement du vote & création du Bulletin Anonyme
+        // 1. Chiffrement du vote & création du Bulletin Anonyme chaîné
         String votePayload = "CHOICE:" + candidatureId + ":ELECTION:" + electionId + ":NONCE:" + UUID.randomUUID();
         String encryptedPayload = cryptoService.encrypt(votePayload);
-        String ballotHash = cryptoService.hash(encryptedPayload + "_" + System.nanoTime());
+        Optional<Ballot> lastBallot = ballotRepository.findTopByElectionIdOrderBySequenceNumberDesc(electionId);
+        String previousHash = lastBallot.map(Ballot::getBallotHash).orElse("GENESIS");
+        long nextSequence = lastBallot.map(b -> b.getSequenceNumber() + 1L).orElse(1L);
+        String ballotHash = cryptoService.hash(previousHash + "|" + encryptedPayload + "|" + nextSequence);
 
         Ballot ballot = Ballot.builder()
                 .election(election)
                 .candidatureId(candidatureId)
                 .encryptedPayload(encryptedPayload)
                 .ballotHash(ballotHash)
+                .previousHash(previousHash)
+                .sequenceNumber(nextSequence)
                 .build();
         ballotRepository.save(ballot);
 

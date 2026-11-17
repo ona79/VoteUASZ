@@ -17,11 +17,15 @@ import sn.uasz.vote.dto.LoginRequest;
 import sn.uasz.vote.entity.User;
 import sn.uasz.vote.enums.Role;
 import sn.uasz.vote.enums.TypeElecteur;
+import sn.uasz.vote.repository.PasswordResetTokenRepository;
+import sn.uasz.vote.repository.RefreshTokenRepository;
 import sn.uasz.vote.repository.UserRepository;
 import sn.uasz.vote.security.CustomUserDetailsService;
 import sn.uasz.vote.security.JwtAuthenticationFilter;
 import sn.uasz.vote.security.JwtTokenProvider;
 import sn.uasz.vote.security.SecurityConfig;
+import sn.uasz.vote.service.CryptoService;
+import sn.uasz.vote.service.OtpEmailService;
 
 import java.util.List;
 import java.util.Map;
@@ -56,6 +60,18 @@ class AuthControllerTest {
 
     @MockBean
     private CustomUserDetailsService customUserDetailsService;
+
+    @MockBean
+    private RefreshTokenRepository refreshTokenRepository;
+
+    @MockBean
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @MockBean
+    private CryptoService cryptoService;
+
+    @MockBean
+    private OtpEmailService otpEmailService;
 
     // ───────────────────────────────────────────────────────────────────────
     // POST /api/v1/auth/login

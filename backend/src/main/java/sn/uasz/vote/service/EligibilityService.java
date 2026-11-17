@@ -96,8 +96,12 @@ public class EligibilityService {
      * Retourne un message explicatif d'inéligibilité pour informer l'électeur.
      */
     public String getIneligibilityReason(User user, Election election) {
-        if (user == null) return "Utilisateur non identifié.";
-        if (!user.isActive()) return "Votre compte est désactivé.";
+        if (user == null) {
+            return "Utilisateur non identifié.";
+        }
+        if (!user.isActive()) {
+            return "Votre compte est désactivé.";
+        }
 
         if (election.getType() == TypeElection.DELEGUE) {
             if (user.getTypeElecteur() != TypeElecteur.ETUDIANT) {

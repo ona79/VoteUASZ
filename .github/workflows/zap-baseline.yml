@@ -1,0 +1,22 @@
+name: OWASP ZAP Baseline Scan
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'URL cible à analyser (ex: https://vote-uasz.onrender.com)'
+        required: true
+        type: string
+
+jobs:
+  zap_scan:
+    runs-on: ubuntu-latest
+    name: Analyse de sécurité passive OWASP ZAP
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: ${{ inputs.target_url }}
+          fail_action: false

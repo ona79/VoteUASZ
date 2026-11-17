@@ -279,7 +279,9 @@ public class PdfReportService {
     }
 
     private String formatFrenchDate(LocalDateTime dateTime) {
-        if (dateTime == null) dateTime = LocalDateTime.now();
+        if (dateTime == null) {
+            dateTime = LocalDateTime.now();
+        }
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'à' HH:mm", Locale.FRENCH);
         return dateTime.format(formatter);
     }
