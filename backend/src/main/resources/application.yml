@@ -53,6 +53,7 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     expiration-ms: 86400000 # 24 heures
+    refresh-expiration-ms: 604800000 # 7 jours
   otp:
     expiration-minutes: 5
   crypto:

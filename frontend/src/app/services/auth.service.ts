@@ -16,6 +16,9 @@ export class AuthService {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, { matriculeOrEmail: matricule, password }).pipe(
       tap(response => {
         localStorage.setItem('voteuasz_token', response.token);
+        if (response.refreshToken) {
+          localStorage.setItem('voteuasz_refresh_token', response.refreshToken);
+        }
         localStorage.setItem('voteuasz_user', JSON.stringify(response));
         this.currentUser.set(response);
       }),
@@ -57,8 +60,35 @@ export class AuthService {
     return this.http.post<{ message: string }>(`${this.apiUrl}/forgot-password`, { identifier });
   }
 
+  resetPassword(identifier: string, code: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/reset-password`, { identifier, code, newPassword });
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/change-password`, { currentPassword, newPassword });
+  }
+
+  refreshToken(): Observable<AuthResponse> {
+    const refreshToken = localStorage.getItem('voteuasz_refresh_token');
+    return this.http.post<AuthResponse>(`${this.apiUrl}/refresh`, { refreshToken }).pipe(
+      tap(response => {
+        localStorage.setItem('voteuasz_token', response.token);
+        if (response.refreshToken) {
+          localStorage.setItem('voteuasz_refresh_token', response.refreshToken);
+        }
+        localStorage.setItem('voteuasz_user', JSON.stringify(response));
+        this.currentUser.set(response);
+      })
+    );
+  }
+
   logout(): void {
+    const refreshToken = localStorage.getItem('voteuasz_refresh_token');
+    if (refreshToken) {
+      this.http.post(`${this.apiUrl}/logout`, { refreshToken }).subscribe({ error: () => {} });
+    }
     localStorage.removeItem('voteuasz_token');
+    localStorage.removeItem('voteuasz_refresh_token');
     localStorage.removeItem('voteuasz_user');
     this.currentUser.set(null);
   }

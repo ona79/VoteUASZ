@@ -58,6 +58,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Endpoints publics & ressources statiques Frontend
                         .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/assets/**", "/favicon.ico", "/*.png", "/*.svg", "/*.webp", "/*.webmanifest", "/*.json").permitAll()
+                        .requestMatchers("/api/v1/auth/change-password").authenticated()
                         .requestMatchers("/api/v1/auth/**", "/ws/**", "/h2-console/**", "/swagger-ui/**", "/api-docs/**", "/error").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/elections", "/api/v1/elections/**", "/api/v1/campaigns/**", "/api/v1/candidacies/*/posts", "/api/v1/candidatures/*/posts", "/api/v1/vote/status/**").permitAll()
                         // Création, modification & suppression des élections — SUPER_ADMIN uniquement

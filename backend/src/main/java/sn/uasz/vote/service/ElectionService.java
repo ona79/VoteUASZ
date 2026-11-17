@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import sn.uasz.vote.dto.ElectionDto;
 import sn.uasz.vote.dto.LiveResultsDto;
 import sn.uasz.vote.entity.Election;
-import sn.uasz.vote.entity.User;
 import sn.uasz.vote.enums.ElectionStatus;
 import sn.uasz.vote.repository.ElectionRepository;
 
