@@ -30,4 +30,10 @@ public class Ballot {
 
     @Column(name = "ballot_hash", nullable = false, unique = true)
     private String ballotHash;
+
+    @Column(name = "previous_hash", nullable = false)
+    private String previousHash;
+
+    @Column(name = "sequence_number", nullable = false)
+    private Long sequenceNumber;
 }

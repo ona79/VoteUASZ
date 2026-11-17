@@ -8,8 +8,12 @@ import sn.uasz.vote.enums.ElectionStatus;
 public class ElectionStateMachine {
 
     public boolean canTransition(ElectionStatus current, ElectionStatus next) {
-        if (current == null || next == null) return false;
-        if (current == next) return true;
+        if (current == null || next == null) {
+            return false;
+        }
+        if (current == next) {
+            return true;
+        }
 
         return switch (current) {
             case CONFIGURATION -> next == ElectionStatus.CAMPAGNE;
