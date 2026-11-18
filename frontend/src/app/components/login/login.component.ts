@@ -439,7 +439,8 @@ export class LoginComponent implements OnInit {
     this.authService.login(this.matricule, this.password).subscribe({
       next: (user) => {
         this.loading = false;
-        if (user.role === 'SUPER_ADMIN') this.router.navigate(['/admin']);
+        if (user.mustChangePassword) this.router.navigate(['/change-password']);
+        else if (user.role === 'SUPER_ADMIN') this.router.navigate(['/admin']);
         else if (user.role === 'COMMISSION_ELECTORALE') this.router.navigate(['/commission']);
         else if (user.role === 'CANDIDAT') this.router.navigate(['/candidat']);
         else this.router.navigate(['/elections']);

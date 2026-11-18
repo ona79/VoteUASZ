@@ -25,12 +25,12 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         boolean accountNonLocked = user.getLockedUntil() == null || !java.time.LocalDateTime.now().isBefore(user.getLockedUntil());
 
-        return new org.springframework.security.core.userdetails.User(
+        return new CustomUserDetails(
                 user.getMatricule(),
                 user.getPassword(),
                 user.isActive(),
-                true, true,
                 accountNonLocked,
+                user.isMustChangePassword(),
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         );
     }

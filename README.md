@@ -29,6 +29,7 @@
 ## Table des Matières
 
 - [À Propos du Projet](#à-propos-du-projet)
+- [Aperçu de l'Interface](#aperçu-de-linterface)
 - [Fonctionnalités](#fonctionnalités)
 - [Architecture Technique](#architecture-technique)
 - [Structure du Projet](#structure-du-projet)
@@ -50,6 +51,22 @@
 Elle permet à l'université d'organiser toutes ses élections internes (Délégués de classe, Directeurs d'UFR, Vice-Recteur) dans un environnement numérique sécurisé, transparent et vérifiable, accessible depuis n'importe quel appareil.
 
 > **L'anonymat du suffrage est garanti par dissociation cryptographique totale** entre l'identité de l'électeur et le contenu de son bulletin (chiffrement AES-256).
+
+---
+
+## Aperçu de l'Interface
+
+| Connexion sécurisée | Liste des scrutins |
+|---|---|
+| <img src="./docs/rapport_latex/images/01-login.png" alt="Page de connexion" width="420" /> | <img src="./docs/rapport_latex/images/02-elections.png" alt="Liste des scrutins" width="420" /> |
+
+| Vote sécurisé par OTP | Résultats en temps réel (STOMP + Chart.js) |
+|---|---|
+| <img src="./docs/rapport_latex/images/03-vote-detail.png" alt="Détail de vote et OTP" width="420" /> | <img src="./docs/rapport_latex/images/06-resultats-live.png" alt="Résultats temps réel" width="420" /> |
+
+| Administration & Audit SHA-256 | Procès-Verbal PDF officiel |
+|---|---|
+| <img src="./docs/rapport_latex/images/10-audit.png" alt="Journal d'audit SHA-256" width="420" /> | <img src="./docs/rapport_latex/images/11-pv-pdf.png" alt="Procès-Verbal PDF" width="420" /> |
 
 ---
 
@@ -187,6 +204,14 @@ docker compose up --build
 | PostgreSQL (connexion externe — DBeaver, pgAdmin...) | `localhost:5540` |
 
 > Ouvrez http://localhost:8025 pendant un vote pour voir les codes OTP arriver en temps réel.
+
+---
+
+### Mise en production du changement de mot de passe forcé
+
+1. **Déployer d'abord le backend** (`ddl-auto: update`) pour créer la colonne `users.must_change_password` (`BOOLEAN NOT NULL DEFAULT false`) et `password_reset_tokens.attempts_count` (`INTEGER NOT NULL DEFAULT 0`).
+2. **Valider sur un compte neuf** importé via CSV (`must_change_password = true` automatiquement) que l'écran `/change-password` s'affiche et débloque l'accès après modification.
+3. **Exécuter le script ponctuel** [`docs/sql/force-password-change.sql`](docs/sql/force-password-change.sql) sur la base PostgreSQL de production pour marquer les comptes `ELECTEUR` et `CANDIDAT` existants, puis vérifier les comptages par rôle.
 
 ---
 

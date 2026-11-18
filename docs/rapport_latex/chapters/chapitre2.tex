@@ -1,4 +1,5 @@
 \chapter{Conception}
+\label{chap:2}
 
 \section{Architecture logicielle et déploiement}
 
@@ -33,7 +34,7 @@ La figure~\ref{fig:use-case} synthétise les cas d'utilisation par rôle à part
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.95\textwidth,height=0.50\textheight,keepaspectratio]{use-case-global.pdf}
-    \caption{Diagramme de cas d'utilisation global de VoteUASZ}
+    \caption{Diagramme de cas d'utilisation global de VoteUASZ (réclamations dans les 48 heures calendaires après \texttt{dateFin})}
     \label{fig:use-case}
 \end{figure}
 
@@ -107,24 +108,33 @@ La base de données s'appuie sur \textbf{11 entités JPA} et \textbf{6 énuméra
 
 Le tableau~\ref{tab:menaces} synthétise les menaces identifiées et les mécanismes réellement implémentés dans le code, sans surestimer les garanties cryptographiques.
 
-\begin{table}[H]
-\centering
+\begin{longtable}{@{}p{0.20\textwidth}p{0.39\textwidth}p{0.35\textwidth}@{}}
 \caption{Analyse Menaces / Contre-mesures / Limites réelles du code}
-\label{tab:menaces}
-\small
-\begin{tabularx}{\textwidth}{@{}lXX@{}}
+\label{tab:menaces} \\
 \toprule
 \rowcolor{uaszlight}
 \textbf{Menace} & \textbf{Contre-mesure implémentée} & \textbf{Limite résiduelle honnête} \\
 \midrule
+\endfirsthead
+\multicolumn{3}{@{}l}{\small\textit{(suite de la table~\ref{tab:menaces})}} \\
+\toprule
+\rowcolor{uaszlight}
+\textbf{Menace} & \textbf{Contre-mesure implémentée} & \textbf{Limite résiduelle honnête} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r@{}}{\small\textit{(à suivre)}} \\
+\endfoot
+\bottomrule
+\endlastfoot
 Double vote & Contrainte \texttt{UNIQUE(user\_id, election\_id)} sur \texttt{voter\_audit\_logs}, vérification préalable et invalidation du \texttt{VoteToken}. & Protection applicative et SGBD complète pour un compte donné. \\
-Force brute / DDoS applicatif & \texttt{RateLimitingFilter} (20\,req/min/IP sur login et OTP), verrouillage 5\,min après 5 échecs, \texttt{ClientIpResolver} anti-spoofing proxy. & Fenêtre en mémoire JVM (non partagée si plusieurs instances backend). \\
+Force brute / DDoS applicatif & \texttt{RateLimitingFilter} (20\,req/min/IP sur \texttt{/auth/login}, \texttt{/auth/forgot-password}, \texttt{/auth/reset-password}, \texttt{/vote/request-otp}, \texttt{/vote/verify-otp}, HTTP \texttt{429}), verrouillage 5\,min après 5 échecs de connexion, \texttt{ClientIpResolver} anti-spoofing proxy. & Fenêtre en mémoire JVM (non partagée si plusieurs instances backend). \\
+Réinitialisation \& changement de mot de passe & \texttt{/auth/forgot-password} (code 6 chiffres, validité 15\,min, BCrypt, cooldown 60\,s, invalidation des anciens codes, réponse neutre \texttt{200 OK}) ; \texttt{/auth/reset-password} (max 5 essais, réponse \texttt{400} générique, $\ge 8$ car.) ; \textbf{changement de mot de passe forcé} (\texttt{mustChangePassword=true} à l'import CSV, blocage HTTP \texttt{403 PASSWORD\_CHANGE\_REQUIRED} + STOMP, \texttt{/auth/change-password} $\ge 8$ car. et différent de l'ancien). & Le script SQL ponctuel \texttt{docs/sql/force-password-change.sql} doit être exécuté manuellement en production pour les comptes déjà créés avant le déploiement. \\
+Vol ou réutilisation de session & \textbf{Refresh Token rotatif} stocké haché en SHA-256 (validité 7\,j, révocation immédiate de l'ancien jeton à chaque \texttt{/auth/refresh}, rejet en \texttt{401} si réutilisé ; prouvé par \texttt{RefreshTokenAndPassword\allowbreak ManagementTest\#\allowbreak refreshToken\_\allowbreak rotationAndLogout}). & Le JWT d'accès (\texttt{24\,h}) reste valide jusqu'à son expiration s'il n'est pas accompagné d'une déconnexion côté client. \\
 Rupture du secret du vote & Absence totale de clé étrangère entre \texttt{ballots} et \texttt{users} ; \texttt{Ballot.id} en \texttt{UUID} sans \texttt{createdAt} ; \texttt{votedAt} tronqué à l'heure et IP salée. & \textbf{Corrélation d'ordre possible} : dans \texttt{VotingService.submitVote()}, \texttt{VoterAuditLog} (ID séquentiel) et \texttt{Ballot.sequenceNumber} sont insérés dans la même transaction. \\
 Accès au contenu des bulletins & Chiffrement \textbf{AES-256-GCM} (PBKDF2WithHmacSHA256, 65\,536 itérations, IV 12\,octets). & \textbf{Clé détenue par le serveur} (\texttt{CRYPTO\_SECRET}) : le serveur peut déchiffrer à tout moment ; de plus, \texttt{candidatureId} est stocké en clair dans \texttt{ballots} pour le décompte SQL temps réel. \\
 Altération silencieuse des bulletins & Chaînage \textbf{SHA-256} (\texttt{previousHash} depuis \texttt{"GENESIS"}) vérifié par \texttt{AuditService.verifyBallotChain()}. & \textbf{Aucune signature asymétrique RSA} ni reçu individuel vérifiable par l'électeur ; le PV PDF OpenPDF n'est pas signé numériquement (X.509). \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\end{longtable}
 
 \section{Patrons de conception et stack technique}
 

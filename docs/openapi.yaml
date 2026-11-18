@@ -69,6 +69,104 @@ paths:
                     type: string
                   niveau:
                     type: string
+                  mustChangePassword:
+                    type: boolean
+
+  /auth/refresh:
+    post:
+      summary: Renouveler le JWT via un refresh token valide (avec rotation)
+      operationId: refresh
+      tags: [Authentification]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Nouveaux JWT et refresh token (inclut mustChangePassword)
+        '401':
+          description: Refresh token invalide, expiré ou révoqué
+
+  /auth/forgot-password:
+    post:
+      summary: Demander un code de réinitialisation de mot de passe (cooldown 60 s, réponse neutre)
+      operationId: forgotPassword
+      tags: [Authentification]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier]
+              properties:
+                identifier:
+                  type: string
+      responses:
+        '200':
+          description: Réponse neutre constante (anti-énumération)
+        '429':
+          description: Trop de requêtes (limite 20 req/min/IP)
+
+  /auth/reset-password:
+    post:
+      summary: Réinitialiser le mot de passe avec le code à 6 chiffres (max 5 tentatives)
+      operationId: resetPassword
+      tags: [Authentification]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, code, newPassword]
+              properties:
+                identifier:
+                  type: string
+                code:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Mot de passe réinitialisé (mustChangePassword repasse à false)
+        '400':
+          description: Code de réinitialisation invalide ou expiré (message générique)
+        '429':
+          description: Trop de requêtes (limite 20 req/min/IP)
+
+  /auth/change-password:
+    post:
+      summary: Modifier le mot de passe de l'utilisateur connecté (>= 8 caractères, différent de l'ancien)
+      operationId: changePassword
+      tags: [Authentification]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Mot de passe modifié (mustChangePassword repasse à false)
+        '400':
+          description: Mot de passe trop court ou identique à l'ancien
+        '401':
+          description: Authentification requise ou mot de passe actuel incorrect
 
   /admin/users/import-csv:
     post:
@@ -189,6 +287,26 @@ paths:
               properties:
                 electionId:
                   type: integer
+      responses:
+        '200':
+          description: Code OTP généré et envoyé par e-mail
+        '403':
+          description: Changement de mot de passe requis (code PASSWORD_CHANGE_REQUIRED)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Forbidden
+                  code:
+                    type: string
+                    example: PASSWORD_CHANGE_REQUIRED
+                  message:
+                    type: string
+        '429':
+          description: Trop de requêtes (limite 20 req/min/IP)
 
   /vote/verify-otp:
     post:
@@ -207,6 +325,26 @@ paths:
               properties:
                 electionId:
                   type: integer
+      responses:
+        '200':
+          description: Code OTP généré et envoyé par e-mail
+        '403':
+          description: Changement de mot de passe requis (code PASSWORD_CHANGE_REQUIRED)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Forbidden
+                  code:
+                    type: string
+                    example: PASSWORD_CHANGE_REQUIRED
+                  message:
+                    type: string
+        '429':
+          description: Trop de requêtes (limite 20 req/min/IP)
                 otpCode:
                   type: string
                   example: "849201"

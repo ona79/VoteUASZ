@@ -40,6 +40,9 @@ import java.util.UUID;
 public class AuthController {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final int MAX_RESET_ATTEMPTS = 5;
+    private static final long FORGOT_PASSWORD_COOLDOWN_SECONDS = 60L;
+    private static final String GENERIC_RESET_ERROR = "Code de réinitialisation invalide ou expiré.";
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
@@ -158,21 +161,32 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
+    @Transactional
     @Operation(summary = "Demander la réinitialisation du mot de passe (réponse neutre)")
     public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody Map<String, String> payload) {
         String emailOrMatricule = payload != null ? payload.get("identifier") : null;
         if (emailOrMatricule != null && !emailOrMatricule.isBlank()) {
             User user = findUserByIdentifier(emailOrMatricule.trim());
             if (user != null && user.isActive()) {
-                String rawCode = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
-                PasswordResetToken resetToken = PasswordResetToken.builder()
-                        .user(user)
-                        .codeHash(passwordEncoder.encode(rawCode))
-                        .expiresAt(LocalDateTime.now().plusMinutes(15))
-                        .used(false)
-                        .build();
-                passwordResetTokenRepository.save(resetToken);
-                otpEmailService.sendPasswordResetEmail(user.getEmail(), rawCode);
+                boolean inCooldown = passwordResetTokenRepository
+                        .findTopByUserIdOrderByCreatedAtDesc(user.getId())
+                        .map(last -> last.getCreatedAt() != null
+                                && last.getCreatedAt().isAfter(LocalDateTime.now().minusSeconds(FORGOT_PASSWORD_COOLDOWN_SECONDS)))
+                        .orElse(false);
+
+                if (!inCooldown) {
+                    passwordResetTokenRepository.invalidateAllUnusedByUserId(user.getId());
+                    String rawCode = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+                    PasswordResetToken resetToken = PasswordResetToken.builder()
+                            .user(user)
+                            .codeHash(passwordEncoder.encode(rawCode))
+                            .expiresAt(LocalDateTime.now().plusMinutes(15))
+                            .used(false)
+                            .attemptsCount(0)
+                            .build();
+                    passwordResetTokenRepository.save(resetToken);
+                    otpEmailService.sendPasswordResetEmail(user.getEmail(), rawCode);
+                }
             }
         }
 
@@ -181,7 +195,7 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    @Transactional
+    @Transactional(noRollbackFor = IllegalArgumentException.class)
     @Operation(summary = "Réinitialiser le mot de passe avec le code reçu par e-mail")
     public ResponseEntity<Map<String, String>> resetPassword(@RequestBody Map<String, String> payload) {
         String identifier = payload != null ? payload.get("identifier") : null;
@@ -189,21 +203,33 @@ public class AuthController {
         String newPassword = payload != null ? payload.get("newPassword") : null;
 
         if (identifier == null || identifier.isBlank() || code == null || code.isBlank() || newPassword == null) {
-            throw new IllegalArgumentException("Identifiant, code et nouveau mot de passe sont obligatoires.");
+            throw new IllegalArgumentException(GENERIC_RESET_ERROR);
         }
         validatePasswordStrength(newPassword);
 
         User user = findUserByIdentifier(identifier.trim());
         if (user == null) {
-            throw new IllegalArgumentException("Code de réinitialisation invalide ou expiré.");
+            throw new IllegalArgumentException(GENERIC_RESET_ERROR);
         }
 
         PasswordResetToken resetToken = passwordResetTokenRepository
                 .findTopByUserIdAndUsedFalseOrderByCreatedAtDesc(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Code de réinitialisation invalide ou expiré."));
+                .orElseThrow(() -> new IllegalArgumentException(GENERIC_RESET_ERROR));
 
-        if (resetToken.isExpired() || !passwordEncoder.matches(code.trim(), resetToken.getCodeHash())) {
-            throw new IllegalArgumentException("Code de réinitialisation invalide ou expiré.");
+        if (resetToken.getAttemptsCount() >= MAX_RESET_ATTEMPTS || resetToken.isExpired()) {
+            resetToken.setUsed(true);
+            passwordResetTokenRepository.save(resetToken);
+            throw new IllegalArgumentException(GENERIC_RESET_ERROR);
+        }
+
+        if (!passwordEncoder.matches(code.trim(), resetToken.getCodeHash())) {
+            int nextAttempts = resetToken.getAttemptsCount() + 1;
+            resetToken.setAttemptsCount(nextAttempts);
+            if (nextAttempts >= MAX_RESET_ATTEMPTS) {
+                resetToken.setUsed(true);
+            }
+            passwordResetTokenRepository.save(resetToken);
+            throw new IllegalArgumentException(GENERIC_RESET_ERROR);
         }
 
         resetToken.setUsed(true);
@@ -212,6 +238,7 @@ public class AuthController {
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setFailedLoginAttempts(0);
         user.setLockedUntil(null);
+        user.setMustChangePassword(false);
         userRepository.save(user);
         refreshTokenRepository.revokeAllByUserId(user.getId());
 
@@ -241,7 +268,12 @@ public class AuthController {
             throw new BadCredentialsException("Le mot de passe actuel est incorrect.");
         }
 
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Le nouveau mot de passe doit être différent de l'ancien mot de passe.");
+        }
+
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
         userRepository.save(user);
         refreshTokenRepository.revokeAllByUserId(user.getId());
 
@@ -279,6 +311,7 @@ public class AuthController {
                 .ufr(user.getUfr())
                 .filiere(user.getFiliere())
                 .niveau(user.getNiveau())
+                .mustChangePassword(user.isMustChangePassword())
                 .build();
     }
 
