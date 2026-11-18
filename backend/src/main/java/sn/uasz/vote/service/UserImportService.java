@@ -144,6 +144,7 @@ public class UserImportService {
                         .filiere(filiere)
                         .niveau(niveau)
                         .active(true)
+                        .mustChangePassword(role == Role.ELECTEUR || role == Role.CANDIDAT)
                         .build();
 
                 userRepository.save(user);

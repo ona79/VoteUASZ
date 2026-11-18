@@ -6,6 +6,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import sn.uasz.vote.dto.LiveResultsDto;
+import sn.uasz.vote.entity.Election;
+import sn.uasz.vote.enums.ElectionStatus;
+import sn.uasz.vote.repository.ElectionRepository;
 
 import java.awt.Color;
 import java.io.ByteArrayInputStream;
@@ -21,6 +24,7 @@ import java.util.Locale;
 public class PdfReportService {
 
     private final VotingService votingService;
+    private final ElectionRepository electionRepository;
 
     // Couleurs officielles de la charte graphique VoteUASZ
     private static final Color COLOR_PRIMARY = new Color(4, 120, 87);      // #047857 Vert UASZ
@@ -32,6 +36,10 @@ public class PdfReportService {
 
     public ByteArrayInputStream generateElectionPdfReport(Long electionId) {
         LiveResultsDto results = votingService.getLiveResults(electionId);
+        ElectionStatus electionStatus = electionRepository.findById(electionId)
+                .map(Election::getStatut)
+                .orElse(null);
+        PvLabels pvLabels = resolvePvLabels(electionStatus);
 
         Document document = new Document(PageSize.A4, 36, 36, 36, 50);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -139,7 +147,7 @@ public class PdfReportService {
             c2.setBorderColor(COLOR_BORDER);
             c2.setPadding(10f);
             c2.addElement(new Paragraph("Suffrages Exprimés : " + results.getTotalVotes() + " votes", labelFont));
-            c2.addElement(new Paragraph("Statut du PV : Définitif et Certifié", valueFont));
+            c2.addElement(new Paragraph(pvLabels.statusLabel(), valueFont));
 
             infoBox.addCell(c1);
             infoBox.addCell(c2);
@@ -235,7 +243,7 @@ public class PdfReportService {
 
             // 6. CERTIFICATION ET SIGNATURE
             Font certifFont = FontFactory.getFont(FontFactory.HELVETICA, 9, Color.DARK_GRAY);
-            Paragraph certif = new Paragraph("Ce document est un Procès-Verbal officiel certifié conforme et inaltérable, généré automatiquement par la plateforme sécurisée VoteUASZ à la clôture du scrutin.", certifFont);
+            Paragraph certif = new Paragraph(pvLabels.certificationText(), certifFont);
             certif.setAlignment(Element.ALIGN_CENTER);
             certif.setSpacingBefore(15);
             document.add(certif);
@@ -247,6 +255,25 @@ public class PdfReportService {
         }
 
         return new ByteArrayInputStream(out.toByteArray());
+    }
+
+    /**
+     * Détermine les libellés officiels ou provisoires du PV selon le statut de l'élection.
+     */
+    PvLabels resolvePvLabels(ElectionStatus status) {
+        if (status == ElectionStatus.CLOTURE) {
+            return new PvLabels(
+                    "Statut du PV : Définitif et Certifié",
+                    "Ce document est un Procès-Verbal officiel certifié conforme, généré automatiquement par la plateforme sécurisée VoteUASZ à la clôture du scrutin."
+            );
+        }
+        return new PvLabels(
+                "Statut du PV : PROVISOIRE (scrutin non clôturé)",
+                "Document provisoire, généré avant la clôture du scrutin. Il ne constitue pas le procès-verbal officiel."
+        );
+    }
+
+    record PvLabels(String statusLabel, String certificationText) {
     }
 
     private Image loadImage(String resourceName, String... fileSystemPaths) {

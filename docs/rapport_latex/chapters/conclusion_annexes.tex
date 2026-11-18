@@ -3,7 +3,7 @@
 
 Le projet \textbf{VoteUASZ} répond au besoin de dématérialisation des scrutins de l'Université Assane Seck de Ziguinchor en proposant une application web complète, de l'import CSV des électeurs à la génération du procès-verbal PDF.
 
-Sur le plan technique, l'architecture sépare l'émargement (\texttt{VoterAuditLog}) du bulletin (\texttt{Ballot} sans clé étrangère vers \texttt{User}), chiffre les bulletins en \textbf{AES-256-GCM} (PBKDF2), relie la chaîne des bulletins en \textbf{SHA-256}, sécurise l'accès par \textbf{JWT HS256} avec \textbf{Refresh Token} rotatif et OTP e-mail, et diffuse les résultats en temps réel via \textbf{STOMP} et \textbf{Chart.js}. La qualité est vérifiée par \textbf{122 tests backend} (couverture JaCoCo \textbf{74,30\,\%} en instructions, \textbf{0 violation Checkstyle}) et \textbf{26 tests frontend} (\textbf{0 échec}).
+Sur le plan technique, l'architecture sépare l'émargement (\texttt{VoterAuditLog}) du bulletin (\texttt{Ballot} sans clé étrangère vers \texttt{User}), chiffre les bulletins en \textbf{AES-256-GCM} (PBKDF2), relie la chaîne des bulletins en \textbf{SHA-256}, sécurise l'accès par \textbf{JWT HS256} avec \textbf{Refresh Token} rotatif et OTP e-mail, diffuse les résultats en temps réel via \textbf{STOMP} et \textbf{Chart.js}, et génère automatiquement le procès-verbal PDF à la clôture (avec mention \texttt{PROVISOIRE} avant clôture). La qualité est vérifiée par \textbf{154 tests backend} (couverture JaCoCo \textbf{65,17\,\%} en instructions et \textbf{70,87\,\%} en lignes, \textbf{0 violation Checkstyle}) et \textbf{28 tests frontend} (\textbf{0 échec}).
 
 De manière lucide, certaines garanties restent perfectibles (clé AES portée par le serveur, corrélation d'ordre possible entre l'ID séquentiel d'émargement et \texttt{sequenceNumber}, absence de signature RSA/X.509 du PV PDF), ouvrant la voie à des perspectives claires pour une version ultérieure.
 
@@ -65,26 +65,33 @@ Machine à états (6 états) & \texttt{service/ElectionStateMachine.java} & \tex
 \end{tabularx}
 \end{table}
 
-\begin{table}[H]
-\centering
-\caption{Principaux endpoints REST (\texttt{docs/openapi.yaml}, préfixe \texttt{/api/v1})}
 \small
-\begin{tabularx}{\textwidth}{@{}llX@{}}
+\begin{longtable}{@{}p{0.16\textwidth}p{0.44\textwidth}p{0.32\textwidth}@{}}
+\caption{Principaux endpoints REST (\texttt{docs/openapi.yaml}, préfixe \texttt{/api/v1})}
+\label{tab:openapi-endpoints} \\
 \toprule
 \rowcolor{uaszlight}
 \textbf{Module} & \textbf{Endpoints} & \textbf{Accès} \\
 \midrule
-Authentification & \texttt{POST /auth/login}, \texttt{/refresh}, \texttt{/logout}, \texttt{/forgot-password}, \texttt{/reset-password} & Public (sauf \texttt{change-password}) \\
-Scrutins & \texttt{GET /elections}, \texttt{POST/PUT/DELETE /elections}, \texttt{PUT /elections/\{id\}/status} & Public en lecture ; \texttt{SUPER\_ADMIN} en écriture \\
-Candidatures & \texttt{POST /candidacies}, \texttt{GET /candidacies/election/\{id\}}, \texttt{PUT /.../validate} & \texttt{CANDIDAT} ; \texttt{COMMISSION} / \texttt{ADMIN} \\
-Campagnes & \texttt{POST /campaigns}, \texttt{GET /campaigns/election/\{id\}} & \texttt{CANDIDAT} approuvé ; authentifié \\
+\endfirsthead
+\multicolumn{3}{@{}l}{\small\textit{(suite de la table~\ref{tab:openapi-endpoints})}} \\
+\toprule
+\rowcolor{uaszlight}
+\textbf{Module} & \textbf{Endpoints} & \textbf{Accès} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+Authentification & \texttt{POST /auth/login}, \texttt{/refresh}, \texttt{/logout}, \texttt{/forgot-password}, \texttt{/reset-password}, \texttt{/change-password} & Public (sauf \texttt{change-password} authentifié) \\
+Scrutins & \texttt{GET /elections}, \texttt{POST/PUT/\allowbreak DELETE /elections}, \texttt{PUT /elections/\allowbreak \{id\}/status} & Public en lecture ; \texttt{SUPER\_ADMIN} en écriture \\
+Candidatures & \texttt{POST /candidacies}, \texttt{GET /candidacies/\allowbreak election/\{id\}}, \texttt{PUT /.../validate} & \texttt{CANDIDAT} ; \texttt{COMMISSION} / \texttt{ADMIN} \\
+Campagnes & \texttt{POST /campaigns}, \texttt{GET /campaigns/\allowbreak election/\{id\}} & \texttt{CANDIDAT} approuvé ; authentifié \\
 Vote OTP & \texttt{POST /vote/request-otp}, \texttt{/verify-otp}, \texttt{/submit}, \texttt{GET /vote/status/\{id\}} & Électeur éligible authentifié \\
-Résultats \& PV & \texttt{GET /results/\{id\}}, \texttt{GET /results/\{id\}/export-pdf} & Selon statut ; \texttt{ADMIN} / \texttt{COMMISSION} \\
+Résultats \& PV & \texttt{GET /results/\{id\}}, \texttt{GET /results/\{id\}/\allowbreak export-pdf} & Tout utilisateur authentifié dès \texttt{DEPOUILLEMENT} (\texttt{DEPOUILLEMENT}, \texttt{PUBLICATION}, \texttt{CLOTURE}) ; \texttt{SUPER\_ADMIN} / \texttt{COMMISSION\_ELECTORALE} avant \\
 Réclamations & \texttt{POST /complaints}, \texttt{GET /complaints/*}, \texttt{PUT /complaints/\{id\}/resolve} & Authentifié ; \texttt{COMMISSION} / \texttt{ADMIN} \\
 Audit \& Import & \texttt{GET /audit/\{id\}}, \texttt{/export-csv}, \texttt{POST /admin/users/import-csv} & \texttt{SUPER\_ADMIN} / \texttt{COMMISSION} \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\end{longtable}
+\normalsize
 
 \chapter{Guide d'installation locale et exemple d'audit / PV}
 

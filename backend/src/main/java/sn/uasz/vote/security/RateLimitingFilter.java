@@ -30,6 +30,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     private static final Set<String> RATE_LIMITED_PATHS = Set.of(
             "/api/v1/auth/login",
+            "/api/v1/auth/forgot-password",
+            "/api/v1/auth/reset-password",
             "/api/v1/vote/request-otp",
             "/api/v1/vote/verify-otp"
     );

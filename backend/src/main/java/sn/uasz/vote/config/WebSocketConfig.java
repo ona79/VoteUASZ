@@ -22,6 +22,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 import sn.uasz.vote.entity.Election;
 import sn.uasz.vote.enums.ElectionStatus;
 import sn.uasz.vote.repository.ElectionRepository;
+import sn.uasz.vote.security.CustomUserDetails;
 import sn.uasz.vote.security.CustomUserDetailsService;
 import sn.uasz.vote.security.JwtTokenProvider;
 
@@ -75,6 +76,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         if (jwtTokenProvider.validateToken(jwt)) {
                             String matricule = jwtTokenProvider.getMatriculeFromToken(jwt);
                             UserDetails userDetails = userDetailsService.loadUserByUsername(matricule);
+                            if (userDetails instanceof CustomUserDetails cud && cud.isMustChangePassword()) {
+                                log.warn("[WS 403] Connexion STOMP refusée pour {} (PASSWORD_CHANGE_REQUIRED)", matricule);
+                                throw new AccessDeniedException("PASSWORD_CHANGE_REQUIRED");
+                            }
                             if (userDetails.isEnabled()) {
                                 accessor.setUser(new UsernamePasswordAuthenticationToken(
                                         userDetails, null, userDetails.getAuthorities()));
@@ -82,6 +87,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         }
                     }
                 } else if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
+                    if (accessor.getUser() instanceof UsernamePasswordAuthenticationToken auth
+                            && auth.getPrincipal() instanceof CustomUserDetails cud
+                            && cud.isMustChangePassword()) {
+                        log.warn("[WS 403] Abonnement STOMP refusé pour {} (PASSWORD_CHANGE_REQUIRED)", auth.getName());
+                        throw new AccessDeniedException("PASSWORD_CHANGE_REQUIRED");
+                    }
                     String destination = accessor.getDestination();
                     if (destination != null && destination.startsWith(RESULTS_TOPIC_PREFIX)) {
                         assertCanSubscribeToResults(accessor, destination);

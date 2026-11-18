@@ -27,6 +27,21 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
           router.navigate(['/login']);
         }
       }
+      // 403 PASSWORD_CHANGE_REQUIRED : Changement de mot de passe obligatoire
+      if (error.status === 403 && error.error?.code === 'PASSWORD_CHANGE_REQUIRED') {
+        const storedUser = localStorage.getItem('voteuasz_user');
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            parsed.mustChangePassword = true;
+            localStorage.setItem('voteuasz_user', JSON.stringify(parsed));
+          } catch {}
+        }
+        if (!router.url.includes('/change-password')) {
+          notificationService.showWarning('Veuillez modifier votre mot de passe avant de continuer.', 'Changement Requis');
+          router.navigate(['/change-password']);
+        }
+      }
       return throwError(() => error);
     })
   );

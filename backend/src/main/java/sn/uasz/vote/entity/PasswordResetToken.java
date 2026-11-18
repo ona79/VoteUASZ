@@ -32,6 +32,10 @@ public class PasswordResetToken {
     @Builder.Default
     private boolean used = false;
 
+    @Column(name = "attempts_count", nullable = false, columnDefinition = "integer default 0")
+    @Builder.Default
+    private int attemptsCount = 0;
+
     @Column(name = "created_at", nullable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

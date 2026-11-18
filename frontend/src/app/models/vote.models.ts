@@ -34,6 +34,7 @@ export interface AuthResponse {
   ufr?: string;
   filiere?: string;
   niveau?: string;
+  mustChangePassword?: boolean;
 }
 
 export interface Election {

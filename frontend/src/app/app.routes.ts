@@ -1,44 +1,51 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login.component';
-import { authGuard, roleGuard } from './guards/auth.guard';
+import { authGuard, passwordChangeGuard, roleGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   {
+    path: 'change-password',
+    loadComponent: () => import('./components/change-password/change-password.component').then(m => m.ChangePasswordComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: 'elections',
-    loadComponent: () => import('./components/election-list/election-list.component').then(m => m.ElectionListComponent)
+    loadComponent: () => import('./components/election-list/election-list.component').then(m => m.ElectionListComponent),
+    canActivate: [passwordChangeGuard]
   },
   {
     path: 'elections/:id',
-    loadComponent: () => import('./components/election-detail/election-detail.component').then(m => m.ElectionDetailComponent)
+    loadComponent: () => import('./components/election-detail/election-detail.component').then(m => m.ElectionDetailComponent),
+    canActivate: [passwordChangeGuard]
   },
 
   // Espace Super-Admin (RBAC: SUPER_ADMIN) - Lazy Loaded
   {
     path: 'admin',
     loadComponent: () => import('./components/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent),
-    canActivate: [authGuard, roleGuard(['SUPER_ADMIN'])]
+    canActivate: [authGuard, passwordChangeGuard, roleGuard(['SUPER_ADMIN'])]
   },
 
   // Espace Commission Électorale (RBAC: COMMISSION_ELECTORALE, SUPER_ADMIN) - Lazy Loaded
   {
     path: 'commission',
     loadComponent: () => import('./components/commission-dashboard/commission-dashboard.component').then(m => m.CommissionDashboardComponent),
-    canActivate: [authGuard, roleGuard(['COMMISSION_ELECTORALE', 'SUPER_ADMIN'])]
+    canActivate: [authGuard, passwordChangeGuard, roleGuard(['COMMISSION_ELECTORALE', 'SUPER_ADMIN'])]
   },
 
   // Espace Candidat (RBAC: CANDIDAT) - Lazy Loaded
   {
     path: 'candidat',
     loadComponent: () => import('./components/candidate-dashboard/candidate-dashboard.component').then(m => m.CandidateDashboardComponent),
-    canActivate: [authGuard, roleGuard(['CANDIDAT'])]
+    canActivate: [authGuard, passwordChangeGuard, roleGuard(['CANDIDAT'])]
   },
 
   // Réclamations électorales (dépôt et suivi pour Électeurs, Candidats, Commission et Admin) - Lazy Loaded
   {
     path: 'reclamations',
     loadComponent: () => import('./components/complaint/complaint.component').then(m => m.ComplaintComponent),
-    canActivate: [authGuard, roleGuard(['ELECTEUR', 'CANDIDAT', 'SUPER_ADMIN', 'COMMISSION_ELECTORALE'])]
+    canActivate: [authGuard, passwordChangeGuard, roleGuard(['ELECTEUR', 'CANDIDAT', 'SUPER_ADMIN', 'COMMISSION_ELECTORALE'])]
   },
 
   { path: '', redirectTo: 'elections', pathMatch: 'full' },
