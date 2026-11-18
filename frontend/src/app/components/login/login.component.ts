@@ -61,7 +61,7 @@ import { NotificationService } from '../../services/notification.service';
           </div>
 
           <!-- Login Form -->
-          <form (ngSubmit)="onSubmit()" class="space-y-4">
+          <form *ngIf="authMode === 'login'" (ngSubmit)="onSubmit()" class="space-y-4">
             <div class="mb-4">
               <label class="block text-xs font-bold text-slate-700 mb-1.5 ml-0.5">Matricule Universitaire</label>
               <input type="text" [(ngModel)]="matricule" name="matricule" required placeholder="ex: 20230001"
@@ -71,7 +71,7 @@ import { NotificationService } from '../../services/notification.service';
             <div class="mb-4">
               <div class="flex justify-between items-center mb-1.5 ml-0.5 mr-0.5">
                 <label class="block text-xs font-bold text-slate-700">Mot de Passe</label>
-                <a href="javascript:void(0)" (click)="forgotPasswordAlert()" class="uasz-link-text">Mot de passe oublié ?</a>
+                <a href="javascript:void(0)" (click)="openForgotPassword()" class="uasz-link-text">Mot de passe oublié ?</a>
               </div>
               <input type="password" [(ngModel)]="password" name="password" required placeholder="••••••••"
                      class="uasz-input"/>
@@ -85,6 +85,67 @@ import { NotificationService } from '../../services/notification.service';
               </button>
             </div>
           </form>
+
+          <!-- Forgot Password Form (Step 1: Request code) -->
+          <form *ngIf="authMode === 'forgot'" (ngSubmit)="sendResetCode()" class="space-y-4">
+            <div class="mb-2">
+              <p class="text-xs text-slate-600 mb-3">
+                Saisissez votre matricule ou adresse e-mail pour recevoir un code de réinitialisation à 6 chiffres.
+              </p>
+              <label class="block text-xs font-bold text-slate-700 mb-1.5 ml-0.5">Matricule ou E-mail</label>
+              <input type="text" [(ngModel)]="matricule" name="forgotIdentifier" required placeholder="ex: 20230001 ou nom@uasz.sn"
+                     class="uasz-input"/>
+            </div>
+
+            <div class="pt-2 space-y-2">
+              <button type="submit" [disabled]="loading" class="uasz-btn-primary w-full py-2.5">
+                <span *ngIf="!loading">Envoyer le code par e-mail</span>
+                <lucide-icon *ngIf="loading" name="loader-2" class="w-4.5 h-4.5 animate-spin mx-auto text-white"></lucide-icon>
+              </button>
+              <div class="flex justify-between items-center pt-1 text-xs">
+                <a href="javascript:void(0)" (click)="authMode = 'reset'; errorMessage = ''" class="uasz-link-text">J'ai déjà un code</a>
+                <a href="javascript:void(0)" (click)="authMode = 'login'; errorMessage = ''" class="text-slate-500 hover:text-slate-800 font-semibold">Retour à la connexion</a>
+              </div>
+            </div>
+          </form>
+
+          <!-- Reset Password Form (Step 2: Enter code & new password) -->
+          <form *ngIf="authMode === 'reset'" (ngSubmit)="confirmResetPassword()" class="space-y-3.5">
+            <p class="text-xs text-slate-600">
+              Saisissez le code à 6 chiffres reçu par e-mail ainsi que votre nouveau mot de passe (8 caractères minimum).
+            </p>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1 ml-0.5">Matricule ou E-mail</label>
+              <input type="text" [(ngModel)]="matricule" name="resetIdentifier" required placeholder="ex: 20230001"
+                     class="uasz-input"/>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1 ml-0.5">Code de réinitialisation (6 chiffres)</label>
+              <input type="text" [(ngModel)]="resetCode" name="resetCode" required maxlength="6" placeholder="123456"
+                     class="uasz-input font-mono tracking-widest text-center"/>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1 ml-0.5">Nouveau mot de passe</label>
+              <input type="password" [(ngModel)]="newPassword" name="newPassword" required placeholder="Minimum 8 caractères"
+                     class="uasz-input"/>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1 ml-0.5">Confirmer le mot de passe</label>
+              <input type="password" [(ngModel)]="confirmNewPassword" name="confirmNewPassword" required placeholder="••••••••"
+                     class="uasz-input"/>
+            </div>
+
+            <div class="pt-2 space-y-2">
+              <button type="submit" [disabled]="loading" class="uasz-btn-primary w-full py-2.5">
+                <span *ngIf="!loading">Réinitialiser le mot de passe</span>
+                <lucide-icon *ngIf="loading" name="loader-2" class="w-4.5 h-4.5 animate-spin mx-auto text-white"></lucide-icon>
+              </button>
+              <div class="flex justify-between items-center pt-1 text-xs">
+                <a href="javascript:void(0)" (click)="sendResetCode()" class="uasz-link-text">Renvoyer un code</a>
+                <a href="javascript:void(0)" (click)="authMode = 'login'; errorMessage = ''" class="text-slate-500 hover:text-slate-800 font-semibold">Retour à la connexion</a>
+              </div>
+            </div>
+          </form>
         </div>
 
       </div>
@@ -94,6 +155,10 @@ import { NotificationService } from '../../services/notification.service';
 export class LoginComponent implements OnInit {
   matricule = '';
   password = '';
+  resetCode = '';
+  newPassword = '';
+  confirmNewPassword = '';
+  authMode: 'login' | 'forgot' | 'reset' = 'login';
   loading = false;
   errorMessage = '';
   isOfflineError = false;
@@ -138,25 +203,69 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  forgotPasswordAlert(): void {
+  openForgotPassword(): void {
+    this.errorMessage = '';
+    const ident = this.matricule?.trim();
+    if (ident) {
+      this.sendResetCode();
+    } else {
+      this.authMode = 'forgot';
+    }
+  }
+
+  sendResetCode(): void {
     const ident = this.matricule?.trim();
     if (!ident) {
-      this.notificationService.showWarning(
-        "Veuillez renseigner votre matricule ou email dans le champ ci-dessus pour demander la réinitialisation.",
-        "Mot de passe oublié"
-      );
+      this.errorMessage = 'Veuillez saisir votre matricule ou adresse e-mail.';
       return;
     }
 
+    this.loading = true;
+    this.errorMessage = '';
     this.authService.forgotPassword(ident).subscribe({
       next: (res) => {
-        this.notificationService.showSuccess(res.message, "Réinitialisation");
+        this.loading = false;
+        this.authMode = 'reset';
+        this.notificationService.showSuccess(res.message, 'Réinitialisation');
       },
-      error: () => {
-        this.notificationService.showInfo(
-          "Pour réinitialiser votre mot de passe, contactez l'administration de votre UFR avec votre carte d'étudiant ou pièce d'identité.",
-          "Réinitialisation de mot de passe"
-        );
+      error: (err) => {
+        this.loading = false;
+        this.errorMessage = err.error?.message || "Impossible d'envoyer le code de réinitialisation.";
+      }
+    });
+  }
+
+  confirmResetPassword(): void {
+    const ident = this.matricule?.trim();
+    const code = this.resetCode?.trim();
+    if (!ident || !code || !this.newPassword) {
+      this.errorMessage = 'Tous les champs sont obligatoires.';
+      return;
+    }
+    if (this.newPassword.length < 8) {
+      this.errorMessage = 'Le nouveau mot de passe doit contenir au moins 8 caractères.';
+      return;
+    }
+    if (this.newPassword !== this.confirmNewPassword) {
+      this.errorMessage = 'Les deux mots de passe ne correspondent pas.';
+      return;
+    }
+
+    this.loading = true;
+    this.errorMessage = '';
+    this.authService.resetPassword(ident, code, this.newPassword).subscribe({
+      next: (res) => {
+        this.loading = false;
+        this.notificationService.showSuccess(res.message, 'Mot de passe mis à jour');
+        this.password = '';
+        this.resetCode = '';
+        this.newPassword = '';
+        this.confirmNewPassword = '';
+        this.authMode = 'login';
+      },
+      error: (err) => {
+        this.loading = false;
+        this.errorMessage = err.error?.message || 'Code de réinitialisation invalide ou expiré.';
       }
     });
   }
