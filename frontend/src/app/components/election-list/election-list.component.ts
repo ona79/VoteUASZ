@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
@@ -6,7 +6,14 @@ import { ElectionService } from '../../services/election.service';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { Election } from '../../models/vote.models';
-import { ElectionFilterComponent } from '../shared/election-filter/election-filter.component';
+import { PageHeaderComponent } from '../shared/page-header/page-header.component';
+import { ElectionToolbarComponent } from '../shared/election-toolbar/election-toolbar.component';
+import { PaginationComponent } from '../shared/pagination/pagination.component';
+import {
+  getElectionScopeLabel,
+  getElectionStatusBadgeClass,
+  getElectionStatusLabel
+} from '../../utils/election-ui.utils';
 
 @Component({
   selector: 'app-election-list',
@@ -15,180 +22,188 @@ import { ElectionFilterComponent } from '../shared/election-filter/election-filt
     CommonModule,
     RouterLink,
     LucideAngularModule,
-    ElectionFilterComponent
+    PageHeaderComponent,
+    ElectionToolbarComponent,
+    PaginationComponent
   ],
   template: `
-    <!-- Hero Header Mobile & Desktop -->
-    <div class="uasz-header-mobile md:mx-auto md:max-w-7xl md:mt-6 relative overflow-hidden mb-6">
-      <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+    <!-- Barre du haut fine (~48px) réutilisable -->
+    <app-page-header title="Scrutins">
+      <ng-container *ngIf="authService.isLoggedIn(); else loginHeaderBtn">
+        <a *ngIf="authService.hasRole('SUPER_ADMIN')" routerLink="/admin"
+           class="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-bold border border-white/25 transition inline-flex items-center space-x-1.5">
+          <lucide-icon name="shield" class="w-3.5 h-3.5"></lucide-icon>
+          <span>Admin</span>
+        </a>
+        <a *ngIf="authService.hasRole('COMMISSION_ELECTORALE')" routerLink="/commission"
+           class="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-bold border border-white/25 transition inline-flex items-center space-x-1.5">
+          <lucide-icon name="landmark" class="w-3.5 h-3.5"></lucide-icon>
+          <span>Commission</span>
+        </a>
+        <a *ngIf="authService.hasRole('ELECTEUR') || authService.hasRole('CANDIDAT')" routerLink="/reclamations"
+           class="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-bold border border-white/25 transition inline-flex items-center space-x-1.5">
+          <lucide-icon name="alert-triangle" class="w-3.5 h-3.5"></lucide-icon>
+          <span>Réclamation</span>
+        </a>
+      </ng-container>
+      <ng-template #loginHeaderBtn>
+        <a routerLink="/login"
+           class="px-3 py-1 rounded-lg bg-white text-[#047857] hover:bg-emerald-50 text-xs font-bold transition inline-flex items-center space-x-1.5 shadow-sm">
+          <lucide-icon name="log-in" class="w-3.5 h-3.5"></lucide-icon>
+          <span>Se connecter</span>
+        </a>
+      </ng-template>
+    </app-page-header>
 
-      <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-5 md:p-8">
-        <div>
-          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-emerald-100 text-[11px] font-bold mb-3 border border-white/20">
-            <img src="assets/logo_vote_uasz.webp" alt="Vote UASZ" class="w-4 h-4 object-contain rounded-sm" />
-            <span>Université Assane Seck</span>
-          </div>
-          <h1 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight mb-2 text-white">Scrutins Officiels</h1>
-          <p class="text-xs md:text-sm text-emerald-100 max-w-2xl font-medium leading-relaxed">
-            Consultez les élections académiques, découvrez les programmes et vidéos des candidats, et exprimez votre vote en toute sécurité.
-          </p>
-        </div>
-
-        <div *ngIf="authService.currentUser() as user; else loginHeaderBtn" class="bg-black/15 backdrop-blur-md p-3.5 rounded-xl border border-white/20 text-white min-w-[210px] shadow-lg w-full md:w-auto flex flex-col justify-between">
-          <div class="flex items-center space-x-3 mb-2">
-            <div class="w-10 h-10 rounded-xl bg-white text-[#047857] flex items-center justify-center text-base font-black shadow-md shrink-0">
-              {{ user.prenom.charAt(0) }}{{ user.nom.charAt(0) }}
-            </div>
-            <div>
-              <p class="text-xs font-black tracking-tight text-white">{{ user.prenom }} {{ user.nom }}</p>
-              <p class="text-[10px] text-emerald-100/90 font-medium">UFR : {{ user.ufr || 'Toutes' }} | {{ user.filiere || 'N/A' }} {{ user.niveau || '' }}</p>
-            </div>
-          </div>
-          <a *ngIf="authService.hasRole('ELECTEUR') || authService.hasRole('CANDIDAT')"
-             routerLink="/reclamations"
-             class="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-[11px] font-bold border border-amber-400/30 transition">
-            <lucide-icon name="alert-triangle" class="w-3.5 h-3.5 text-amber-300"></lucide-icon>
-            <span>Déposer une réclamation</span>
-          </a>
-
-          <a *ngIf="authService.hasRole('COMMISSION_ELECTORALE')"
-             routerLink="/commission"
-             class="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-100 text-[11px] font-bold border border-emerald-400/30 transition">
-            <lucide-icon name="landmark" class="w-3.5 h-3.5 text-emerald-300"></lucide-icon>
-            <span>Espace Commission</span>
-          </a>
-
-          <a *ngIf="authService.hasRole('SUPER_ADMIN')"
-             routerLink="/admin"
-             class="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-100 text-[11px] font-bold border border-blue-400/30 transition">
-            <lucide-icon name="shield" class="w-3.5 h-3.5 text-blue-300"></lucide-icon>
-            <span>Espace Super-Admin</span>
-          </a>
-        </div>
-
-        <ng-template #loginHeaderBtn>
-          <a routerLink="/login" class="px-5 py-3 rounded-xl bg-white text-[#047857] hover:bg-emerald-50 text-xs font-black transition-all shadow-lg flex items-center space-x-2 shrink-0 border border-white/30">
-            <lucide-icon name="log-in" class="w-4 h-4 text-[#047857]"></lucide-icon>
-            <span>Se connecter pour voter</span>
-          </a>
-        </ng-template>
-      </div>
-    </div>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-      <!-- Titre avec compteur total -->
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-black text-slate-900 flex items-center space-x-2 tracking-tight">
-          <lucide-icon name="vote" class="w-5 h-5 text-[#047857] shrink-0"></lucide-icon>
-          <span>Élections</span>
-          <span class="text-xs px-2.5 py-0.5 rounded-lg bg-[#047857]/10 text-[#047857] font-black border border-[#047857]/20">
-            {{ filteredElections.length }}<span *ngIf="filteredElections.length !== elections.length" class="opacity-60"> / {{ elections.length }}</span>
-          </span>
-        </h2>
-      </div>
-
-      <!-- Barre de filtres -->
-      <app-election-filter
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 space-y-3">
+      <!-- Barre d'outils partagée -->
+      <app-election-toolbar
+        #toolbar
         [elections]="elections"
         [ufrList]="ufrList"
-        [showUfrFilter]="true"
-        (filtered)="filteredElections = $event"
-      ></app-election-filter>
+        [showViewSwitch]="true"
+        [viewMode]="viewMode"
+        (filteredChange)="onFilteredChange($event)"
+        (viewModeChange)="setViewMode($event)">
+      </app-election-toolbar>
 
       <!-- Loading State -->
-      <div *ngIf="loading" class="py-12 text-center text-slate-500 animate-pulse">
-        <lucide-icon name="loader-2" class="w-6 h-6 animate-spin mx-auto text-[#047857] mb-2"></lucide-icon>
-        <p class="text-xs font-bold tracking-wide">Chargement des scrutins électoraux...</p>
+      <div *ngIf="loading" class="py-12 text-center text-slate-500">
+        <lucide-icon name="loader-2" class="w-5 h-5 animate-spin mx-auto text-[#047857] mb-2"></lucide-icon>
+        <p class="text-xs font-medium">Chargement des scrutins...</p>
       </div>
 
-      <!-- Elections Grid -->
-      <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div *ngFor="let election of filteredElections"
-             class="bg-white p-4 md:p-5 rounded-2xl border border-slate-200/90 flex flex-col justify-between relative shadow-sm hover:shadow-md transition-all group overflow-hidden">
+      <!-- VUE LISTE PAR DÉFAUT (Desktop Table compacte ~38-40px/ligne) -->
+      <div *ngIf="!loading && viewMode === 'list' && paginatedElections.length > 0"
+           class="hidden md:block bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <th class="py-2.5 px-3.5">Scrutin</th>
+              <th class="py-2.5 px-3 w-32">Type</th>
+              <th class="py-2.5 px-3 w-48">Périmètre</th>
+              <th class="py-2.5 px-3 w-36">Statut</th>
+              <th class="py-2.5 px-3.5 w-20 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-xs">
+            <tr *ngFor="let election of paginatedElections"
+                class="h-10 hover:bg-slate-50/80 transition-colors">
+              <td class="px-3.5 py-1.5 font-semibold text-slate-900 max-w-md truncate" [title]="election.titre">
+                <a [routerLink]="['/elections', election.id]" class="hover:text-[#047857] transition-colors">
+                  {{ election.titre }}
+                </a>
+              </td>
+              <td class="px-3 py-1.5">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded border bg-slate-50 text-slate-700 border-slate-200">
+                  {{ election.type }}
+                </span>
+              </td>
+              <td class="px-3 py-1.5 text-slate-600 truncate max-w-[190px]">
+                {{ getScopeLabel(election) }}
+              </td>
+              <td class="px-3 py-1.5">
+                <span [class]="getStatusBadgeClass(election.statut)"
+                      class="inline-flex items-center space-x-1 text-[10px] font-bold px-2 py-0.5 rounded-md border whitespace-nowrap">
+                  <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                  <span>{{ getStatusLabel(election.statut) }}</span>
+                </span>
+              </td>
+              <td class="px-3.5 py-1.5 text-right">
+                <a [routerLink]="['/elections', election.id]" title="Accéder au scrutin"
+                   class="inline-flex items-center justify-center w-7 h-7 rounded-lg text-[#047857] hover:bg-emerald-50 border border-transparent hover:border-emerald-200 transition">
+                  <lucide-icon name="arrow-right" class="w-4 h-4"></lucide-icon>
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-          <!-- Hover side border indicator -->
-          <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[#047857] opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-
-          <div class="pl-1.5">
-            <!-- Status Badges -->
-            <div class="flex items-center justify-between mb-3">
-              <span [class]="getTypeBadgeClass(election.type)" class="text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider border">
+      <!-- VUE CARTES COMPACTES (Desktop si mode cartes, ou Mobile toujours en cartes simples) -->
+      <div *ngIf="!loading && paginatedElections.length > 0"
+           [class]="viewMode === 'cards' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3' : 'grid grid-cols-1 gap-2.5 md:hidden'">
+        <div *ngFor="let election of paginatedElections"
+             class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm hover:border-[#047857]/40 transition flex flex-col justify-between gap-2.5">
+          <div>
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded border bg-slate-50 text-slate-700 border-slate-200">
                 {{ election.type }}
               </span>
-              <span [class]="getStatusBadgeClass(election.statut)" class="text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider border flex items-center space-x-1 shadow-sm">
-                <span class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
-                <span>{{ election.statut }}</span>
+              <span [class]="getStatusBadgeClass(election.statut)"
+                    class="inline-flex items-center space-x-1 text-[10px] font-bold px-2 py-0.5 rounded-md border">
+                <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                <span>{{ getStatusLabel(election.statut) }}</span>
               </span>
             </div>
-
-            <!-- Title & Description -->
-            <h3 class="text-base font-black text-slate-900 group-hover:text-[#047857] transition-colors mb-1.5 leading-snug tracking-tight">
+            <h3 class="text-sm font-bold text-slate-900 leading-snug line-clamp-1" [title]="election.titre">
               {{ election.titre }}
             </h3>
-            <p *ngIf="election.description" class="text-xs text-slate-500 line-clamp-2 mb-3.5 font-medium leading-relaxed">
-              {{ election.description }}
-            </p>
-
-            <!-- Target Scope details -->
-            <div class="space-y-1 text-[11px] text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100 mb-4 font-medium">
-              <div class="flex justify-between items-center pb-1 border-b border-slate-200/50">
-                <span class="text-slate-400 font-bold uppercase tracking-wider text-[9px]">Périmètre UFR</span>
-                <span class="font-black text-slate-900 text-xs">{{ election.targetUfr || 'Toutes les UFRs' }}</span>
-              </div>
-              <div class="flex justify-between items-center" *ngIf="election.targetFiliere">
-                <span class="text-slate-400 font-bold uppercase tracking-wider text-[9px]">Filière</span>
-                <span class="font-bold text-[#1d4ed8] text-[10px]">{{ election.targetFiliere }}</span>
-              </div>
-              <div class="flex justify-between items-center pt-1 border-t border-slate-200/50" *ngIf="election.targetNiveau">
-                <span class="text-slate-400 font-bold uppercase tracking-wider text-[9px]">Niveau</span>
-                <span class="font-bold text-[#1d4ed8] text-[10px]">{{ election.targetNiveau }}</span>
-              </div>
-            </div>
+            <p class="text-[11px] text-slate-500 mt-1">{{ getScopeLabel(election) }}</p>
           </div>
 
-          <!-- Actions & Eligibility Status -->
-          <div class="pt-3 border-t border-slate-100 flex items-center justify-between pl-1.5">
-            <span *ngIf="election.statut === 'VOTE_OUVERT'" class="text-xs font-black text-[#047857] flex items-center space-x-1">
-              <lucide-icon name="check-circle-2" class="w-3.5 h-3.5 text-[#047857] shrink-0"></lucide-icon>
-              <span>Vote Ouvert</span>
+          <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+            <span class="text-[11px] text-slate-400 font-medium">
+              {{ election.dateFin ? (election.dateFin | date:'dd/MM/yyyy') : 'Scrutin UASZ' }}
             </span>
-            <span *ngIf="election.statut !== 'VOTE_OUVERT'" class="text-xs font-bold text-slate-400">
-              {{ election.statut }}
-            </span>
-
             <a [routerLink]="['/elections', election.id]"
-               class="px-3.5 py-1.5 rounded-xl bg-[#047857] hover:bg-[#065f46] text-white text-xs font-bold transition-all shadow-md shadow-[#047857]/10 flex items-center space-x-1">
+               class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-[#047857] hover:bg-[#065f46] text-white text-[11px] font-bold transition">
               <span>Accéder</span>
-              <span class="group-hover:translate-x-0.5 transition-transform">→</span>
+              <lucide-icon name="arrow-right" class="w-3 h-3"></lucide-icon>
             </a>
           </div>
-
-        </div>
-      </div>
-      <!-- État vide après filtrage -->
-      <div *ngIf="!loading && filteredElections.length === 0 && elections.length > 0"
-           class="py-16 text-center">
-        <div class="inline-flex flex-col items-center gap-3">
-          <span class="text-4xl">🗳️</span>
-          <p class="text-sm font-bold text-slate-600">Aucune élection ne correspond à ces filtres.</p>
-          <p class="text-xs text-slate-400">Modifiez ou réinitialisez vos critères de recherche.</p>
         </div>
       </div>
 
+      <!-- État vide -->
+      <div *ngIf="!loading && filteredElections.length === 0"
+           class="bg-white border border-slate-200 rounded-xl py-10 text-center">
+        <p class="text-xs font-bold text-slate-600">Aucun scrutin ne correspond à vos critères.</p>
+        <button type="button" (click)="toolbar.reset()"
+                class="mt-2 text-xs font-semibold text-[#047857] hover:underline">
+          Réinitialiser les filtres
+        </button>
+      </div>
+
+      <!-- Pagination partagée (8 par page) -->
+      <app-pagination
+        *ngIf="!loading"
+        [totalItems]="filteredElections.length"
+        [pageSize]="pageSize"
+        [currentPage]="currentPage"
+        itemLabel="scrutin"
+        (pageChange)="currentPage = $event">
+      </app-pagination>
     </div>
   `
 })
 export class ElectionListComponent implements OnInit {
+  private static readonly VIEW_STORAGE_KEY = 'voteuasz_elections_view';
+
+  @ViewChild('toolbar') toolbar!: ElectionToolbarComponent;
+
   elections: Election[] = [];
   filteredElections: Election[] = [];
   ufrList: string[] = [];
   loading = true;
+
+  viewMode: 'list' | 'cards' = 'list';
+  currentPage = 1;
+  readonly pageSize = 8;
+
+  getScopeLabel = getElectionScopeLabel;
+  getStatusLabel = getElectionStatusLabel;
+  getStatusBadgeClass = getElectionStatusBadgeClass;
 
   private electionService = inject(ElectionService);
   private notificationService = inject(NotificationService);
   authService = inject(AuthService);
 
   ngOnInit(): void {
+    const savedView = localStorage.getItem(ElectionListComponent.VIEW_STORAGE_KEY);
+    if (savedView === 'list' || savedView === 'cards') {
+      this.viewMode = savedView;
+    }
     this.fetchElections();
   }
 
@@ -197,8 +212,9 @@ export class ElectionListComponent implements OnInit {
     this.electionService.getElections().subscribe({
       next: (data) => {
         this.elections = data;
-        this.filteredElections = data;
         this.ufrList = [...new Set(data.map(e => e.targetUfr).filter((u): u is string => !!u))];
+        this.filteredElections = data;
+        this.currentPage = 1;
         this.loading = false;
       },
       error: () => {
@@ -208,23 +224,18 @@ export class ElectionListComponent implements OnInit {
     });
   }
 
-  getTypeBadgeClass(type: string): string {
-    switch (type) {
-      case 'DELEGUE': return 'bg-blue-50 text-[#1d4ed8] border-blue-200';
-      case 'DUFR': return 'bg-emerald-50 text-[#047857] border-emerald-200';
-      case 'VICE_RECTEUR': return 'bg-red-50 text-[#dc2626] border-red-200';
-      default: return 'bg-slate-50 text-slate-800 border-slate-200';
-    }
+  onFilteredChange(filtered: Election[]): void {
+    this.filteredElections = filtered;
+    this.currentPage = 1;
   }
 
-  getStatusBadgeClass(status: string): string {
-    switch (status) {
-      case 'VOTE_OUVERT': return 'bg-emerald-50 text-[#047857] border-emerald-200';
-      case 'CAMPAGNE': return 'bg-blue-50 text-[#1d4ed8] border-blue-200';
-      case 'DEPOUILLEMENT': return 'bg-amber-50 text-amber-700 border-amber-200';
-      case 'PUBLICATION': return 'bg-blue-50 text-[#1d4ed8] border-blue-200';
-      case 'CLOTURE': return 'bg-red-50 text-[#dc2626] border-red-200';
-      default: return 'bg-slate-50 text-slate-600 border-slate-200';
-    }
+  setViewMode(mode: 'list' | 'cards'): void {
+    this.viewMode = mode;
+    localStorage.setItem(ElectionListComponent.VIEW_STORAGE_KEY, mode);
+  }
+
+  get paginatedElections(): Election[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredElections.slice(start, start + this.pageSize);
   }
 }

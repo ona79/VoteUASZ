@@ -23,11 +23,11 @@ import { AuthService } from './services/auth.service';
       <!-- Masquer la barre de navigation uniquement sur la page de connexion -->
       <app-navbar *ngIf="!isLoginPage()"></app-navbar>
 
-      <main [class]="isLoginPage() ? 'flex-grow' : 'flex-grow md:ml-56 pb-16 md:pb-0'">
+      <main [class]="isLoginPage() ? 'flex-grow' : 'flex-grow md:ml-[52px] pb-16 md:pb-0'">
         <router-outlet></router-outlet>
       </main>
 
-      <footer [class]="isLoginPage() ? 'py-4 border-t border-slate-200 bg-white text-center text-xs text-slate-500 z-10 relative' : 'py-4 border-t border-slate-200 bg-white text-center text-xs text-slate-500 z-10 relative md:ml-56'">
+      <footer [class]="isLoginPage() ? 'py-4 border-t border-slate-200 bg-white text-center text-xs text-slate-500 z-10 relative' : 'py-4 border-t border-slate-200 bg-white text-center text-xs text-slate-500 z-10 relative md:ml-[52px]'">
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2 font-medium">
           <span>© 2026 Université Assane Seck de Ziguinchor (UASZ) — Tous droits réservés</span>
           <span class="text-emerald-800 font-extrabold flex items-center space-x-1.5">

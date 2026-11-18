@@ -1,0 +1,221 @@
+\documentclass[11pt,a4paper]{report}
+
+% --- Encodage et langue ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% --- Mise en page ---
+\usepackage[top=2.2cm,bottom=2.2cm,left=2.2cm,right=2.2cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% --- Graphiques, tableaux et couleurs ---
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tcolorbox}
+\usepackage{titlesec}
+
+% --- Palette officielle VoteUASZ ---
+\definecolor{uaszgreen}{HTML}{047857}
+\definecolor{uaszdark}{HTML}{065F46}
+\definecolor{uaszlight}{HTML}{ECFDF5}
+\definecolor{uaszblue}{HTML}{1D4ED8}
+\definecolor{uaszslate}{HTML}{0F172A}
+\definecolor{codebg}{HTML}{F8FAFC}
+\definecolor{codeborder}{HTML}{CBD5E1}
+
+% --- Styles des titres (design VoteUASZ) ---
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{uaszdark}}
+  {\colorbox{uaszgreen}{\parbox{0.96\textwidth}{\color{white}\large\ \chaptername\ \thechapter}}}
+  {10pt}
+  {\Huge\color{uaszslate}}
+\titlespacing*{\chapter}{0pt}{-15pt}{18pt}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{uaszdark}}
+  {\textcolor{uaszblue}{\thesection}}{0.8em}{}
+  [\vspace{-0.4em}\textcolor{uaszgreen}{\rule{\linewidth}{0.6pt}}]
+
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{uaszslate}}
+  {\textcolor{uaszgreen}{\thesubsection}}{0.6em}{}
+
+% --- Boîtes VoteUASZ ---
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{uaszbox}[1]{
+  colback=uaszlight,
+  colframe=uaszgreen,
+  coltitle=white,
+  fonttitle=\bfseries\small,
+  title=#1,
+  arc=3mm,
+  boxrule=0.8pt,
+  breakable
+}
+
+% --- En-têtes et pieds de page ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{uaszdark}{\textbf{VoteUASZ}} \textcolor{gray}{| Mémoire de PFE}}
+\fancyhead[R]{\small\textcolor{gray}{Ibrahima DIALLO (202300429)}}
+\fancyfoot[L]{\small\textcolor{uaszgreen}{Université Assane Seck de Ziguinchor (UASZ)}}
+\fancyfoot[R]{\small\textbf{\thepage}}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+
+% --- Liens hypertextes ---
+\usepackage[colorlinks=true,linkcolor=uaszdark,urlcolor=uaszblue,citecolor=uaszgreen]{hyperref}
+
+\graphicspath{{../../report/figures/}{../../docs/uml/}{images/}}
+
+\begin{document}
+
+% ============================================================================
+% PAGE DE GARDE — DESIGN VOTEUASZ
+% ============================================================================
+\begin{titlepage}
+\begin{center}
+    \begin{minipage}{0.2\textwidth}
+        \centering
+        \includegraphics[height=2.1cm]{logo_uasz.png}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.55\textwidth}
+        \centering
+        {\small \textbf{RÉPUBLIQUE DU SÉNÉGAL}}\\
+        {\footnotesize \textit{Un Peuple -- Un But -- Une Foi}}\\[0.2cm]
+        {\small \textbf{\textcolor{uaszdark}{UNIVERSITÉ ASSANE SECK DE ZIGUINCHOR}}}\\
+        {\footnotesize UFR Sciences et Technologies -- Département d'Informatique}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.2\textwidth}
+        \centering
+        \includegraphics[height=2.1cm]{logo_vote_uasz.png}
+    \end{minipage}
+
+    \vspace{1.0cm}
+    \begin{tcolorbox}[colback=uaszgreen,colframe=uaszdark,arc=4mm,boxrule=1pt]
+        \centering
+        {\Large \textbf{\color{white} MÉMOIRE DE PROJET DE FIN D'ÉTUDES}}
+    \end{tcolorbox}
+
+    \vspace{1.2cm}
+    {\small \textsc{\textcolor{uaszblue}{\textbf{THÈME DU PROJET}}}}\\[0.4cm]
+    {\LARGE \textbf{\textcolor{uaszslate}{Conception et Réalisation d'une Plateforme de Vote Électronique Sécurisée pour l'UASZ (\textcolor{uaszgreen}{VoteUASZ})}}}\\[1.5cm]
+
+    \begin{tcolorbox}[colback=codebg,colframe=codeborder,arc=3mm,boxrule=0.8pt]
+        \begin{minipage}{0.48\textwidth}
+            \textbf{\textcolor{uaszdark}{Présenté par :}}\\
+            \textbf{Ibrahima DIALLO}\\
+            Matricule : \texttt{202300429}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.48\textwidth}
+            \begin{flushright}
+            \textbf{\textcolor{uaszdark}{Sous la direction de :}}\\
+            \textbf{Monsieur TOURÉ}\\
+            Encadreur académique
+            \end{flushright}
+        \end{minipage}
+    \end{tcolorbox}
+
+    \vfill
+    {\normalsize \textbf{\textcolor{uaszdark}{Année universitaire : 2025 -- 2026}}}\\
+    {\footnotesize Plateforme déployée : \url{https://vote-uasz-frontend.vercel.app}}
+\end{center}
+\end{titlepage}
+
+% ============================================================================
+% PAGES LIMINAIRES
+% ============================================================================
+\pagenumbering{roman}
+
+\chapter*{Dédicace et Remerciements}
+\addcontentsline{toc}{chapter}{Dédicace et Remerciements}
+Je dédie ce travail à mes parents et à ma famille pour leur soutien constant.  
+J'adresse mes sincères remerciements à mon encadreur, \textbf{Monsieur TOURÉ}, pour ses orientations rigoureuses et ses conseils méthodologiques, ainsi qu'aux enseignants du Département d'Informatique de l'UASZ et aux membres du jury.
+
+\chapter*{Résumé et Abstract}
+\addcontentsline{toc}{chapter}{Résumé et Abstract}
+\begin{uaszbox}{Résumé technique}
+\textbf{VoteUASZ} est une application web de vote électronique développée pour les scrutins de l'Université Assane Seck de Ziguinchor (\texttt{DELEGUE}, \texttt{DUFR}, \texttt{VICE\_RECTEUR}). Construite avec \textbf{Spring Boot 3.2.3 (Java 21)}, \textbf{Angular 17} et \textbf{PostgreSQL 16}, elle sépare structurellement l'émargement (\texttt{VoterAuditLog}) du bulletin (\texttt{Ballot}, sans clé étrangère vers \texttt{User}), chiffre le contenu du bulletin en \textbf{AES-256-GCM} (clé dérivée via PBKDF2WithHmacSHA256) et relie les bulletins par une chaîne d'empreintes \textbf{SHA-256} (\texttt{previousHash}). L'accès est protégé par \textbf{JWT HS256} avec \textbf{Refresh Token} rotatif, code \textbf{OTP} par e-mail (Brevo/SMTP), diffusion temps réel \textbf{STOMP} et génération de procès-verbal PDF (\textbf{OpenPDF}). La suite automatisée valide \textbf{122 tests backend} (couverture JaCoCo \textbf{74,30\,\%} en instructions, \textbf{0 violation Checkstyle}) et \textbf{26 tests frontend} (\textbf{0 échec}), pour un bundle initial de \textbf{419,65\,kB}.
+
+\medskip
+\noindent\textbf{Mots-clés :} Vote électronique, Spring Boot, Angular, PostgreSQL, AES-256-GCM, SHA-256, JWT, OTP, WebSocket STOMP, UASZ.
+\end{uaszbox}
+
+\begin{uaszbox}{Abstract}
+\textbf{VoteUASZ} is a secure e-voting web platform designed for Assane Seck University of Ziguinchor elections (\texttt{DELEGUE}, \texttt{DUFR}, \texttt{VICE\_RECTEUR}). Built with \textbf{Spring Boot 3.2.3 (Java 21)}, \textbf{Angular 17}, and \textbf{PostgreSQL 16}, it enforces ballot anonymity by isolating voter attendance (\texttt{VoterAuditLog}) from \textbf{AES-256-GCM} encrypted, \textbf{SHA-256} hash-chained ballots (\texttt{Ballot} without any foreign key to \texttt{User}). Security relies on \textbf{JWT HS256} with rotating \textbf{Refresh Tokens}, email \textbf{OTP}, \textbf{STOMP} live results, and \textbf{OpenPDF} reports. Automated verification passes \textbf{122 backend tests} (74.30\% JaCoCo instruction coverage, 0 Checkstyle violations) and \textbf{26 Angular tests} (0 failures), with a \textbf{419.65\,kB} initial production bundle.
+
+\medskip
+\noindent\textbf{Keywords:} E-voting, Spring Boot, Angular, PostgreSQL, AES-256-GCM, SHA-256, JWT, OTP, WebSocket STOMP, UASZ.
+\end{uaszbox}
+
+\chapter*{Glossaire et Sigles}
+\addcontentsline{toc}{chapter}{Glossaire et Sigles}
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\rowcolor{uaszlight}
+\textbf{Sigle / Terme} & \textbf{Définition dans le cadre du projet} \\
+\midrule
+\textbf{AES-256-GCM} & \textit{Advanced Encryption Standard} 256 bits en mode Galois/Counter (confidentialité + tag d'authenticité 128 bits). \\
+\textbf{API REST} & Interface de programmation applicative exposée sur HTTP(S) au format JSON (\texttt{/api/v1/**}). \\
+\textbf{CORS} & \textit{Cross-Origin Resource Sharing}, politique de contrôle des origines autorisées par le navigateur. \\
+\textbf{CSV} & \textit{Comma-Separated Values}, format utilisé pour l'import des électeurs et l'export du journal d'audit. \\
+\textbf{DUFR} & Directeur d'Unité de Formation et de Recherche. \\
+\textbf{JPA} & \textit{Jakarta Persistence API}, couche de mapping objet-relationnel (Hibernate). \\
+\textbf{JWT} & \textit{JSON Web Token}, jeton d'authentification signé en \texttt{HS256}. \\
+\textbf{OTP} & \textit{One-Time Password}, code à usage unique à 6 chiffres envoyé par e-mail (validité 5 min). \\
+\textbf{PBKDF2} & \textit{Password-Based Key Derivation Function 2} (65\,536 itérations HMAC-SHA256). \\
+\textbf{PV} & Procès-Verbal officiel de dépouillement généré au format PDF via OpenPDF. \\
+\textbf{PWA} & \textit{Progressive Web App}, supportée côté Angular via \texttt{ngsw-config.json}. \\
+\textbf{RBAC} & \textit{Role-Based Access Control} (\texttt{SUPER\_ADMIN}, \texttt{COMMISSION\_ELECTORALE}, \texttt{CANDIDAT}, \texttt{ELECTEUR}). \\
+\textbf{SHA-256} & Fonction de hachage cryptographique utilisée pour le chaînage des bulletins, les jetons et l'audit IP. \\
+\textbf{STOMP} & \textit{Simple Text Oriented Messaging Protocol} sur WebSocket (\texttt{/ws}) pour les résultats temps réel. \\
+\textbf{UASZ} & Université Assane Seck de Ziguinchor. \\
+\textbf{UFR} & Unité de Formation et de Recherche (\texttt{UFR\_SAT}, \texttt{UFR\_SJAG}, \texttt{UFR\_LL}). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+% ============================================================================
+% CORPS DU MÉMOIRE
+% ============================================================================
+\clearpage
+\pagenumbering{arabic}
+
+\chapter*{Introduction Générale}
+\addcontentsline{toc}{chapter}{Introduction Générale}
+
+L'organisation traditionnelle sur papier des scrutins universitaires à l'Université Assane Seck de Ziguinchor (UASZ) mobilise d'importantes ressources logistiques, allonge les délais de dépouillement et limite la participation des électeurs éloignés du campus.
+
+Le projet \textbf{VoteUASZ}, conçu et développé individuellement par l'étudiant dans le cadre de son Projet de Fin d'Études, propose une plateforme web sécurisée couvrant les scrutins de délégués de classe (\texttt{DELEGUE}), de directeurs d'UFR (\texttt{DUFR}) et de vice-recteur (\texttt{VICE\_RECTEUR}). L'architecture cherche un équilibre pragmatique entre \textbf{intégrité du scrutin} (unicité du vote, chaînage SHA-256 des bulletins) et \textbf{secret du suffrage} (isolation schématique entre l'identité de l'électeur et le bulletin enregistré).
+
+Ce mémoire s'articule en trois chapitres :
+\begin{itemize}
+    \item Le \textbf{Chapitre 1} présente la gestion du projet, l'analyse des besoins, le contrôle d'accès RBAC et le cycle de vie réel des scrutins.
+    \item Le \textbf{Chapitre 2} détaille la conception logicielle, les diagrammes UML et relationnels générés depuis le code, ainsi que l'analyse honnête des menaces et contre-mesures.
+    \item Le \textbf{Chapitre 3} décrit l'implémentation sécurisée, les interfaces réalisées, les métriques réelles de tests et de qualité, le déploiement cloud et le bilan critique par rapport au cahier des charges.
+\end{itemize}
+
+\input{chapters/chapitre1}
+\input{chapters/chapitre2}
+\input{chapters/chapitre3}
+\input{chapters/conclusion_annexes}
+
+\end{document}

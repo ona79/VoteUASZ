@@ -93,3 +93,9 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
+
+      # Seeder de démonstration UASZ (désactivé par défaut).
+      # Passer à "true" une seule fois après déploiement pour injecter les données de démo,
+      # puis remettre à "false" (un marqueur en base empêche de toute façon toute ré-exécution).
+      - key: SEED_DEMO_DATA
+        value: "false"

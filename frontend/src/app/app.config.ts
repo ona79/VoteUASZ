@@ -33,7 +33,14 @@ import {
   Play,
   ChevronDown,
   LogIn,
-  ArrowDown
+  ArrowDown,
+  List,
+  LayoutGrid,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  ArrowRight,
+  MoreHorizontal
 } from 'lucide-angular';
 import { routes } from './app.routes';
 import { jwtInterceptor } from './interceptors/jwt.interceptor';
@@ -75,7 +82,14 @@ export const appConfig: ApplicationConfig = {
         Play,
         ChevronDown,
         LogIn,
-        ArrowDown
+        ArrowDown,
+        List,
+        LayoutGrid,
+        ChevronLeft,
+        ChevronRight,
+        Search,
+        ArrowRight,
+        MoreHorizontal
     })),
     provideServiceWorker('ngsw-worker.js', {
         enabled: !isDevMode(),

@@ -14,79 +14,95 @@ import { AuthService } from '../../services/auth.service';
     LucideAngularModule
   ],
   template: `
-    <!-- DESKTOP SIDEBAR (hidden on mobile, fixed left) -->
-    <aside class="uasz-sidebar-desktop flex flex-col h-full bg-white border-r border-slate-200 shadow-sm fixed left-0 top-0 z-40 hidden md:flex">
+    <!-- DESKTOP SIDEBAR COMPACT (~52px, icônes + tooltip au survol) -->
+    <aside class="uasz-sidebar-desktop flex flex-col items-center h-full bg-white border-r border-slate-200 shadow-sm fixed left-0 top-0 z-40 hidden md:flex">
       <!-- Logo -->
-      <div class="p-5 border-b border-slate-100">
-        <a routerLink="/" class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-white p-0.5 flex items-center justify-center shadow-md border border-slate-100 shrink-0 overflow-hidden">
-            <img src="assets/logo_vote_uasz.webp" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
-          </div>
-          <div class="flex flex-col">
-            <span class="font-black text-lg tracking-tight text-slate-900 leading-none">Vote<span class="text-[#047857]">UASZ</span></span>
-            <span class="text-[9px] text-[#047857] font-bold tracking-wider uppercase mt-0.5">Université Assane Seck</span>
-          </div>
+      <div class="h-12 w-full flex items-center justify-center border-b border-slate-100 shrink-0">
+        <a routerLink="/" title="VoteUASZ — Accueil" class="w-8 h-8 rounded-lg bg-white p-0.5 flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden hover:border-[#047857] transition">
+          <img src="assets/logo_vote_uasz.webp" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
         </a>
       </div>
 
-      <!-- Navigation Links -->
-      <div class="flex-1 overflow-y-auto p-3 space-y-1.5">
-        <!-- Élections : Toujours visible pour tous (public et connecté) -->
-        <a routerLink="/elections" routerLinkActive="bg-emerald-50 text-[#047857] font-bold border-emerald-200"
-           class="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-[#047857] hover:bg-emerald-50/60 transition border border-transparent">
+      <!-- Navigation Links (icônes seules + tooltip au survol) -->
+      <div class="flex-1 w-full flex flex-col items-center py-3 space-y-2">
+        <a routerLink="/elections" routerLinkActive="bg-emerald-50 text-[#047857] border-emerald-200"
+           title="Élections"
+           class="group relative w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 hover:text-[#047857] hover:bg-emerald-50/70 transition border border-transparent">
           <lucide-icon name="vote" class="w-4 h-4 shrink-0"></lucide-icon>
-          <span>Élections</span>
+          <span class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-full ml-2.5 px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-semibold whitespace-nowrap shadow-md z-50">
+            Élections
+          </span>
         </a>
 
         <ng-container *ngIf="authService.isLoggedIn()">
           <a *ngIf="authService.hasRole('SUPER_ADMIN')" routerLink="/admin"
-             routerLinkActive="bg-emerald-50 text-[#047857] font-bold border-emerald-200"
-             class="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-[#047857] hover:bg-emerald-50/60 transition border border-transparent">
+             routerLinkActive="bg-emerald-50 text-[#047857] border-emerald-200"
+             title="Super-Admin"
+             class="group relative w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 hover:text-[#047857] hover:bg-emerald-50/70 transition border border-transparent">
             <lucide-icon name="shield" class="w-4 h-4 shrink-0"></lucide-icon>
-            <span>Super-Admin</span>
+            <span class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-full ml-2.5 px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-semibold whitespace-nowrap shadow-md z-50">
+              Super-Admin
+            </span>
           </a>
 
           <a *ngIf="authService.hasRole('COMMISSION_ELECTORALE')" routerLink="/commission"
-             routerLinkActive="bg-emerald-50 text-[#047857] font-bold border-emerald-200"
-             class="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-[#047857] hover:bg-emerald-50/60 transition border border-transparent">
+             routerLinkActive="bg-emerald-50 text-[#047857] border-emerald-200"
+             title="Commission"
+             class="group relative w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 hover:text-[#047857] hover:bg-emerald-50/70 transition border border-transparent">
             <lucide-icon name="landmark" class="w-4 h-4 shrink-0"></lucide-icon>
-            <span>Commission</span>
+            <span class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-full ml-2.5 px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-semibold whitespace-nowrap shadow-md z-50">
+              Commission
+            </span>
           </a>
 
           <a *ngIf="authService.hasRole('CANDIDAT')" routerLink="/candidat"
-             routerLinkActive="bg-emerald-50 text-[#047857] font-bold border-emerald-200"
-             class="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-[#047857] hover:bg-emerald-50/60 transition border border-transparent">
+             routerLinkActive="bg-emerald-50 text-[#047857] border-emerald-200"
+             title="Espace Candidat"
+             class="group relative w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 hover:text-[#047857] hover:bg-emerald-50/70 transition border border-transparent">
             <lucide-icon name="megaphone" class="w-4 h-4 shrink-0"></lucide-icon>
-            <span>Espace Candidat</span>
+            <span class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-full ml-2.5 px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-semibold whitespace-nowrap shadow-md z-50">
+              Espace Candidat
+            </span>
           </a>
 
           <a *ngIf="authService.hasRole('ELECTEUR') || authService.hasRole('CANDIDAT') || authService.hasRole('SUPER_ADMIN') || authService.hasRole('COMMISSION_ELECTORALE')"
              routerLink="/reclamations"
-             routerLinkActive="bg-emerald-50 text-[#047857] font-bold border-emerald-200"
-             class="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-[#047857] hover:bg-emerald-50/60 transition border border-transparent">
+             routerLinkActive="bg-emerald-50 text-[#047857] border-emerald-200"
+             title="Réclamations"
+             class="group relative w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 hover:text-[#047857] hover:bg-emerald-50/70 transition border border-transparent">
             <lucide-icon name="alert-triangle" class="w-4 h-4 shrink-0 text-amber-600"></lucide-icon>
-            <span>Réclamations</span>
+            <span class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-full ml-2.5 px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-semibold whitespace-nowrap shadow-md z-50">
+              Réclamations
+            </span>
           </a>
         </ng-container>
       </div>
 
-      <!-- User Profile (Bottom) -->
-      <div class="p-3.5 border-t border-slate-100 bg-slate-50/50">
+      <!-- User Profile / Login / Logout (Bottom) -->
+      <div class="w-full py-3 border-t border-slate-100 bg-slate-50/50 flex flex-col items-center space-y-2">
         <ng-container *ngIf="authService.currentUser() as user; else loginBtnDesk">
-          <div class="flex flex-col mb-2.5">
-            <span class="text-xs font-black text-slate-900 leading-tight">{{ user.prenom }} {{ user.nom }}</span>
-            <span [class]="getRoleBadgeClass(user.role)" class="text-[9px] px-2 py-0.5 rounded-md font-bold uppercase mt-1 border w-max">
-              {{ user.role }}
+          <div [title]="user.prenom + ' ' + user.nom + ' (' + user.role + ')'"
+               class="group relative w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 text-[#047857] flex items-center justify-center text-[11px] font-black cursor-default">
+            {{ user.prenom.charAt(0) }}{{ user.nom.charAt(0) }}
+            <span class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-full ml-2.5 px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-semibold whitespace-nowrap shadow-md z-50">
+              {{ user.prenom }} {{ user.nom }} ({{ user.role }})
             </span>
           </div>
-          <button (click)="logout()" class="w-full px-3 py-1.5 rounded-lg text-xs font-bold text-[#dc2626] bg-red-50 hover:bg-red-100 border border-red-200 transition flex items-center justify-center space-x-1.5 shadow-sm">
-            <lucide-icon name="log-out" class="w-3.5 h-3.5 shrink-0"></lucide-icon>
-            <span>Déconnexion</span>
+          <button (click)="logout()" title="Déconnexion"
+                  class="group relative w-9 h-9 rounded-xl text-[#dc2626] bg-red-50 hover:bg-red-100 border border-red-200 transition flex items-center justify-center">
+            <lucide-icon name="log-out" class="w-4 h-4 shrink-0"></lucide-icon>
+            <span class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-full ml-2.5 px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-semibold whitespace-nowrap shadow-md z-50">
+              Déconnexion
+            </span>
           </button>
         </ng-container>
         <ng-template #loginBtnDesk>
-          <a routerLink="/login" class="uasz-btn-primary w-full block text-center py-2 text-xs">
-            Se Connecter
+          <a routerLink="/login" title="Se Connecter"
+             class="group relative w-9 h-9 rounded-xl bg-[#047857] hover:bg-[#065f46] text-white flex items-center justify-center transition shadow-sm">
+            <lucide-icon name="log-in" class="w-4 h-4 shrink-0"></lucide-icon>
+            <span class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute left-full ml-2.5 px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-semibold whitespace-nowrap shadow-md z-50">
+              Se Connecter
+            </span>
           </a>
         </ng-template>
       </div>
