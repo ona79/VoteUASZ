@@ -138,5 +138,32 @@ describe('ElectionDetailComponent', () => {
     component.setChartType('doughnut');
     expect(component.chartType).toBe('doughnut');
   });
+
+  it('should automatically create Chart.js instance when results are present and update in place on STOMP push', () => {
+    isLoggedIn = true;
+    currentUserRole = 'ELECTEUR';
+    electionServiceSpy.getElection.and.returnValue(of(mockElection('DEPOUILLEMENT')));
+
+    fixture = TestBed.createComponent(ElectionDetailComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const initialChart = (component as any).resultsChart;
+    expect(initialChart).toBeDefined();
+    expect(initialChart.data.datasets[0].data).toEqual([3, 2]);
+
+    resultsSubject.next({
+      electionId: 1,
+      electionTitre: 'Élection Délégué L3',
+      totalVotes: 6,
+      candidateResults: [
+        { candidatureId: 10, nomCandidat: 'Awa Ndiaye', nomListe: 'Awa Ndiaye', voteCount: 4, percentage: 66.7 },
+        { candidatureId: 11, nomCandidat: 'Moussa Diop', nomListe: 'Moussa Diop', voteCount: 2, percentage: 33.3 }
+      ]
+    });
+
+    expect((component as any).resultsChart).toBe(initialChart);
+    expect(initialChart.data.datasets[0].data).toEqual([4, 2]);
+  });
 });
 

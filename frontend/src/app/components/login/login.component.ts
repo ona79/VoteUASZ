@@ -40,16 +40,21 @@ import { NotificationService } from '../../services/notification.service';
       animation: formFadeIn 0.22s ease-out both;
     }
 
+    .pill-field {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-left: 18px;
+      padding-right: 18px;
+    }
+
     .pill-icon {
-      position: absolute;
-      left: 18px;
-      top: 50%;
-      transform: translateY(-50%);
       width: 18px;
       height: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
       pointer-events: none;
     }
 
@@ -59,7 +64,11 @@ import { NotificationService } from '../../services/notification.service';
     }
 
     .pill-input {
-      padding-left: 50px !important;
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      padding: 0 !important;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -225,21 +234,19 @@ import { NotificationService } from '../../services/notification.service';
           <form *ngIf="authMode === 'login'" (ngSubmit)="onSubmit()" class="space-y-3">
             <div>
               <label for="login-matricule" class="sr-only">Matricule universitaire</label>
-              <div class="relative">
-                <lucide-icon name="user" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+              <div class="pill-field h-[46px] rounded-full bg-[#f3f4f6] border border-slate-200 focus-within:border-[#047857] focus-within:ring-2 focus-within:ring-[#047857]/25 transition overflow-hidden">
+                <lucide-icon name="user" [size]="18" class="pill-icon text-slate-400"></lucide-icon>
                 <input id="login-matricule" type="text" [(ngModel)]="matricule" name="matricule" required placeholder="Matricule universitaire"
-                       class="pill-input w-full h-[46px] pl-12 pr-4 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] text-slate-900 placeholder-slate-400
-                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
+                       class="pill-input flex-1 min-w-0 h-full text-[14px] text-slate-900 placeholder-slate-400 focus:outline-none"/>
               </div>
             </div>
 
             <div>
               <label for="login-password" class="sr-only">Mot de passe</label>
-              <div class="relative">
-                <lucide-icon name="lock" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+              <div class="pill-field h-[46px] rounded-full bg-[#f3f4f6] border border-slate-200 focus-within:border-[#047857] focus-within:ring-2 focus-within:ring-[#047857]/25 transition overflow-hidden">
+                <lucide-icon name="lock" [size]="18" class="pill-icon text-slate-400"></lucide-icon>
                 <input id="login-password" type="password" [(ngModel)]="password" name="password" required placeholder="Mot de passe"
-                       class="pill-input w-full h-[46px] pl-12 pr-4 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] text-slate-900 placeholder-slate-400
-                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
+                       class="pill-input flex-1 min-w-0 h-full text-[14px] text-slate-900 placeholder-slate-400 focus:outline-none"/>
               </div>
               <div class="flex justify-end mt-1.5 pr-1">
                 <a href="javascript:void(0)" (click)="openForgotPassword()"
@@ -265,11 +272,10 @@ import { NotificationService } from '../../services/notification.service';
           <form *ngIf="authMode === 'forgot'" (ngSubmit)="sendResetCode()" class="space-y-3">
             <div>
               <label for="forgot-identifier" class="sr-only">Matricule ou e-mail</label>
-              <div class="relative">
-                <lucide-icon name="user" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+              <div class="pill-field h-[46px] rounded-full bg-[#f3f4f6] border border-slate-200 focus-within:border-[#047857] focus-within:ring-2 focus-within:ring-[#047857]/25 transition overflow-hidden">
+                <lucide-icon name="user" [size]="18" class="pill-icon text-slate-400"></lucide-icon>
                 <input id="forgot-identifier" type="text" [(ngModel)]="matricule" name="forgotIdentifier" required placeholder="Matricule ou e-mail"
-                       class="pill-input w-full h-[46px] pl-12 pr-4 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] text-slate-900 placeholder-slate-400
-                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
+                       class="pill-input flex-1 min-w-0 h-full text-[14px] text-slate-900 placeholder-slate-400 focus:outline-none"/>
               </div>
             </div>
 
@@ -296,41 +302,37 @@ import { NotificationService } from '../../services/notification.service';
           <form *ngIf="authMode === 'reset'" (ngSubmit)="confirmResetPassword()" class="space-y-2.5">
             <div>
               <label for="reset-identifier" class="sr-only">Matricule ou e-mail</label>
-              <div class="relative">
-                <lucide-icon name="user" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+              <div class="pill-field h-[44px] rounded-full bg-[#f3f4f6] border border-slate-200 focus-within:border-[#047857] focus-within:ring-2 focus-within:ring-[#047857]/25 transition overflow-hidden">
+                <lucide-icon name="user" [size]="18" class="pill-icon text-slate-400"></lucide-icon>
                 <input id="reset-identifier" type="text" [(ngModel)]="matricule" name="resetIdentifier" required placeholder="Matricule ou e-mail"
-                       class="pill-input w-full h-[44px] pl-12 pr-4 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] text-slate-900 placeholder-slate-400
-                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
+                       class="pill-input flex-1 min-w-0 h-full text-[14px] text-slate-900 placeholder-slate-400 focus:outline-none"/>
               </div>
             </div>
 
             <div>
               <label for="reset-code" class="sr-only">Code de réinitialisation</label>
-              <div class="relative">
-                <lucide-icon name="key" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+              <div class="pill-field h-[44px] rounded-full bg-[#f3f4f6] border border-slate-200 focus-within:border-[#047857] focus-within:ring-2 focus-within:ring-[#047857]/25 transition overflow-hidden">
+                <lucide-icon name="key" [size]="18" class="pill-icon text-slate-400"></lucide-icon>
                 <input id="reset-code" type="text" [(ngModel)]="resetCode" name="resetCode" required maxlength="6" placeholder="123456"
-                       class="pill-input w-full h-[44px] pl-12 pr-12 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] font-mono text-center tracking-[0.35em] text-slate-900 placeholder-slate-400
-                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
+                       class="pill-input flex-1 min-w-0 h-full pr-[30px] text-[14px] font-mono text-center tracking-[0.35em] text-slate-900 placeholder-slate-400 focus:outline-none"/>
               </div>
             </div>
 
             <div>
               <label for="reset-new-password" class="sr-only">Nouveau mot de passe</label>
-              <div class="relative">
-                <lucide-icon name="lock" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+              <div class="pill-field h-[44px] rounded-full bg-[#f3f4f6] border border-slate-200 focus-within:border-[#047857] focus-within:ring-2 focus-within:ring-[#047857]/25 transition overflow-hidden">
+                <lucide-icon name="lock" [size]="18" class="pill-icon text-slate-400"></lucide-icon>
                 <input id="reset-new-password" type="password" [(ngModel)]="newPassword" name="newPassword" required placeholder="Nouveau mot de passe (min. 8 car.)"
-                       class="pill-input w-full h-[44px] pl-12 pr-4 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] text-slate-900 placeholder-slate-400
-                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
+                       class="pill-input flex-1 min-w-0 h-full text-[14px] text-slate-900 placeholder-slate-400 focus:outline-none"/>
               </div>
             </div>
 
             <div>
               <label for="reset-confirm-password" class="sr-only">Confirmer le mot de passe</label>
-              <div class="relative">
-                <lucide-icon name="lock" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+              <div class="pill-field h-[44px] rounded-full bg-[#f3f4f6] border border-slate-200 focus-within:border-[#047857] focus-within:ring-2 focus-within:ring-[#047857]/25 transition overflow-hidden">
+                <lucide-icon name="lock" [size]="18" class="pill-icon text-slate-400"></lucide-icon>
                 <input id="reset-confirm-password" type="password" [(ngModel)]="confirmNewPassword" name="confirmNewPassword" required placeholder="Confirmer le mot de passe"
-                       class="pill-input w-full h-[44px] pl-12 pr-4 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] text-slate-900 placeholder-slate-400
-                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
+                       class="pill-input flex-1 min-w-0 h-full text-[14px] text-slate-900 placeholder-slate-400 focus:outline-none"/>
               </div>
             </div>
 
