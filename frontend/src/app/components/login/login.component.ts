@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
@@ -12,143 +12,381 @@ import { NotificationService } from '../../services/notification.service';
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     LucideAngularModule
   ],
+  styles: [`
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 1000px #f3f4f6 inset !important;
+      -webkit-text-fill-color: #0f172a !important;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+
+    @keyframes formFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .form-fade {
+      animation: formFadeIn 0.22s ease-out both;
+    }
+
+    .pill-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .pill-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .pill-input {
+      padding-left: 50px !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .form-fade {
+        animation: none;
+      }
+    }
+  `],
   template: `
-    <div class="min-h-[85vh] md:min-h-screen flex items-center justify-center bg-slate-50 relative p-4 md:p-6 lg:p-8">
-      <div class="w-full max-w-4xl bg-white rounded-3xl md:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row glass-card border-0">
-        
-        <!-- Brand Panel (Top Banner on Mobile, Left Side on Desktop) -->
-        <div class="w-full md:w-5/12 bg-gradient-to-br from-[#047857] to-[#065f46] p-6 md:p-8 flex flex-col justify-between relative overflow-hidden text-white shrink-0 rounded-b-[28px] md:rounded-b-none md:rounded-l-[2rem]">
-          <div class="absolute -top-32 -left-32 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-          <div class="absolute -bottom-32 -right-32 w-64 h-64 bg-[#1d4ed8]/20 rounded-full blur-3xl"></div>
-          
-          <div class="relative z-10 text-center md:text-left flex flex-col items-center md:items-start mb-4 md:mb-0">
-            <div class="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-xl mb-4 md:mb-6 border border-white/20 overflow-hidden">
+    <div class="min-h-[calc(100dvh-70px)] md:min-h-[calc(100dvh-49px)] bg-white flex flex-col md:flex-row relative overflow-x-hidden">
+
+      <!-- ================================================================ -->
+      <!-- PANNEAU VERT : Mobile en haut (courbe bas) | Desktop 45% gauche  -->
+      <!-- ================================================================ -->
+      <aside class="relative w-full md:w-[45%] bg-gradient-to-br from-[#064e3b] to-[#065f46] text-white shrink-0 flex flex-col justify-center
+                    min-h-[205px] md:min-h-[calc(100dvh-49px)] px-5 pt-11 pb-6 md:py-6 md:pl-12 md:pr-20
+                    rounded-b-[32px] md:rounded-none">
+
+        <!-- Bouton Retour (Mobile : en haut à droite sur le vert) -->
+        <a *ngIf="authMode === 'login'; else mobileBackToLogin"
+           routerLink="/elections"
+           class="md:hidden absolute top-3.5 right-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                  bg-white/15 border border-white/25 text-white hover:bg-white/25 transition
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80">
+          <lucide-icon name="arrow-left" class="w-3.5 h-3.5 shrink-0"></lucide-icon>
+          <span>Retour à l'accueil</span>
+        </a>
+        <ng-template #mobileBackToLogin>
+          <button type="button" (click)="switchMode('login')"
+                  class="md:hidden absolute top-3.5 right-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                         bg-white/15 border border-white/25 text-white hover:bg-white/25 transition
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80">
+            <lucide-icon name="arrow-left" class="w-3.5 h-3.5 shrink-0"></lucide-icon>
+            <span>Retour à la connexion</span>
+          </button>
+        </ng-template>
+
+        <!-- Contenu Mobile (< 768px), centré -->
+        <div class="md:hidden flex flex-col items-center text-center">
+          <div class="w-12 h-12 rounded-full bg-white p-1.5 flex items-center justify-center shadow-sm mb-2 overflow-hidden">
+            <img src="assets/logo_vote_uasz.webp" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
+          </div>
+          <h2 class="text-[26px] font-black tracking-tight leading-tight">
+            Accès à Vote<span class="text-emerald-300">UASZ</span>
+          </h2>
+          <p class="text-[12px] text-emerald-100/90 leading-snug mt-1 max-w-[290px] line-clamp-2">
+            {{ authMode === 'login'
+              ? "Le portail de vote électronique sécurisé de l'Université Assane Seck de Ziguinchor."
+              : (authMode === 'forgot'
+                ? "Récupérez l'accès à votre compte en recevant un code de vérification par e-mail."
+                : "Définissez un nouveau mot de passe sécurisé pour retrouver l'accès au portail VoteUASZ.") }}
+          </p>
+          <div class="mt-2.5 inline-flex items-center gap-1.5 text-[10px] font-medium text-emerald-50 bg-white/15 px-2.5 py-1 rounded-full border border-white/20">
+            <lucide-icon name="lock" class="w-3 h-3 shrink-0"></lucide-icon>
+            <span>Système crypté de bout en bout</span>
+          </div>
+        </div>
+
+        <!-- Contenu Desktop (>= 768px), aligné à gauche -->
+        <div class="hidden md:flex flex-col items-start text-left relative z-10">
+          <span class="text-[16px] font-medium text-emerald-200 tracking-wide mb-1">Accès à</span>
+          <h2 class="text-[44px] lg:text-[52px] font-black tracking-tight leading-none">
+            Vote<span class="text-emerald-300">UASZ</span>
+          </h2>
+          <p class="text-[14px] text-emerald-100/90 leading-relaxed mt-3 max-w-[320px]">
+            {{ authMode === 'login'
+              ? "Le portail de vote électronique sécurisé de l'Université Assane Seck de Ziguinchor."
+              : (authMode === 'forgot'
+                ? "Récupérez l'accès à votre compte en recevant un code de vérification par e-mail."
+                : "Définissez un nouveau mot de passe sécurisé pour retrouver l'accès au portail VoteUASZ.") }}
+          </p>
+          <div class="mt-5 inline-flex items-center gap-2 text-xs font-medium text-emerald-50 bg-white/15 px-3.5 py-1.5 rounded-full border border-white/20">
+            <lucide-icon name="lock" class="w-3.5 h-3.5 shrink-0"></lucide-icon>
+            <span>Système crypté de bout en bout</span>
+          </div>
+        </div>
+
+        <!-- Bord droit courbe organique (Desktop uniquement) -->
+        <svg class="hidden md:block absolute top-0 right-[-1px] h-full w-16 lg:w-24 text-white pointer-events-none"
+             viewBox="0 0 100 1000" preserveAspectRatio="none" aria-hidden="true">
+          <path fill="currentColor"
+                d="M 62 0 C 98 200, 12 420, 56 620 C 92 785, 22 910, 68 1000 L 100 1000 L 100 0 Z" />
+        </svg>
+
+        <!-- Illustration SVG originale à cheval sur la courbe (Desktop uniquement) -->
+        <div class="hidden md:block absolute top-1/2 -translate-y-1/2 right-[-76px] lg:right-[-92px] z-20 pointer-events-none select-none"
+             aria-hidden="true">
+          <svg class="w-[168px] h-[168px] lg:w-[204px] lg:h-[204px] drop-shadow-md" viewBox="0 0 200 200" fill="none">
+            <!-- Halo plat vert/blanc -->
+            <circle cx="100" cy="100" r="88" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="3" />
+            <circle cx="100" cy="100" r="72" fill="#D1FAE5" opacity="0.55" />
+
+            <!-- Corps de l'urne -->
+            <rect x="46" y="92" width="108" height="68" rx="12" fill="#065F46" />
+            <rect x="52" y="98" width="96" height="56" rx="8" fill="#047857" />
+
+            <!-- Couvercle et fente de l'urne -->
+            <rect x="40" y="82" width="120" height="16" rx="8" fill="#064E3B" />
+            <rect x="66" y="87" width="68" height="5" rx="2.5" fill="#A7F3D0" />
+
+            <!-- Bulletin entrant avec coche -->
+            <g transform="rotate(-5 100 62)">
+              <rect x="68" y="34" width="64" height="54" rx="8" fill="#FFFFFF" stroke="#065F46" stroke-width="3.5" />
+              <!-- Coche verte -->
+              <path d="M84 61 L95 72 L117 49" stroke="#047857" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+            </g>
+
+            <!-- Détail géométrique façade urne -->
+            <circle cx="100" cy="126" r="14" fill="#ECFDF5" opacity="0.22" />
+            <path d="M93 126 L98 131 L108 120" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+      </aside>
+
+      <!-- ================================================================ -->
+      <!-- PARTIE DROITE : Formulaire centré sur fond blanc                 -->
+      <!-- ================================================================ -->
+      <main class="relative flex-1 bg-white flex flex-col justify-center items-center px-5 py-5 md:py-6 md:pl-24 lg:pl-28 md:pr-10">
+
+        <!-- Bouton Retour (Desktop : en haut à droite) -->
+        <a *ngIf="authMode === 'login'; else desktopBackToLogin"
+           routerLink="/elections"
+           class="hidden md:inline-flex items-center gap-1.5 absolute top-6 right-8 px-3.5 py-1.5 rounded-full text-xs font-medium
+                  bg-emerald-50 border border-emerald-200 text-[#065f46] hover:bg-emerald-100 transition
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857] focus-visible:ring-offset-2">
+          <lucide-icon name="arrow-left" class="w-3.5 h-3.5 shrink-0"></lucide-icon>
+          <span>Retour à l'accueil</span>
+        </a>
+        <ng-template #desktopBackToLogin>
+          <button type="button" (click)="switchMode('login')"
+                  class="hidden md:inline-flex items-center gap-1.5 absolute top-6 right-8 px-3.5 py-1.5 rounded-full text-xs font-medium
+                         bg-emerald-50 border border-emerald-200 text-[#065f46] hover:bg-emerald-100 transition
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857] focus-visible:ring-offset-2">
+            <lucide-icon name="arrow-left" class="w-3.5 h-3.5 shrink-0"></lucide-icon>
+            <span>Retour à la connexion</span>
+          </button>
+        </ng-template>
+
+        <div class="w-full max-w-[380px] form-fade">
+
+          <!-- Logo plateforme (Desktop uniquement, masqué sur mobile car déjà dans le bloc vert) -->
+          <div class="hidden md:flex justify-center mb-4">
+            <div class="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 p-2 flex items-center justify-center shadow-sm overflow-hidden">
               <img src="assets/logo_vote_uasz.webp" alt="Logo Vote UASZ" class="w-full h-full object-contain" />
             </div>
-            <h2 class="text-2xl md:text-3xl font-black tracking-tight mb-1.5 md:mb-2">VoteUASZ</h2>
-            <p class="text-emerald-100/90 text-xs font-medium leading-relaxed max-w-xs">Le portail de vote électronique sécurisé de l'Université Assane Seck de Ziguinchor.</p>
-          </div>
-          
-          <div class="relative z-10 flex justify-center md:justify-start">
-            <div class="inline-flex items-center space-x-2 text-[10px] font-bold text-emerald-100 bg-black/10 px-3 py-1.5 md:py-2 rounded-xl border border-white/10 backdrop-blur-sm shadow-inner">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
-              <span>Système crypté de bout en bout</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right Side: Form -->
-        <div class="w-full md:w-7/12 p-6 md:p-10 lg:p-12 relative flex flex-col justify-center bg-white">
-
-          <div class="mb-6 text-center md:text-left">
-            <h3 class="text-xl md:text-2xl font-black text-slate-900 tracking-tight mb-1.5">Connexion</h3>
-            <p class="text-xs text-slate-500 font-medium">Accès réservé aux électeurs et administrateurs pré-provisionnés</p>
           </div>
 
-          <!-- Alert Error (Format doux et fermable) -->
-          <div *ngIf="errorMessage"
-               [class]="isOfflineError ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-red-50 border-red-200 text-[#dc2626]'"
-               class="mb-5 p-3 rounded-xl border text-xs font-semibold flex items-center justify-between shadow-sm animate-fade-in-up">
-            <div class="flex items-center space-x-2.5">
-              <lucide-icon [name]="isOfflineError ? 'info' : 'alert-triangle'" [class]="isOfflineError ? 'text-amber-600' : 'text-[#dc2626]'" class="w-4 h-4 shrink-0"></lucide-icon>
-              <span>{{ errorMessage }}</span>
-            </div>
-            <button (click)="errorMessage = ''" type="button" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition ml-2 shrink-0">
-              <lucide-icon name="x" class="w-3.5 h-3.5"></lucide-icon>
-            </button>
-          </div>
-
-          <!-- Login Form -->
-          <form *ngIf="authMode === 'login'" (ngSubmit)="onSubmit()" class="space-y-4">
-            <div class="mb-4">
-              <label class="block text-xs font-bold text-slate-700 mb-1.5 ml-0.5">Matricule Universitaire</label>
-              <input type="text" [(ngModel)]="matricule" name="matricule" required placeholder="ex: 20230001"
-                     class="uasz-input"/>
-            </div>
-
-            <div class="mb-4">
-              <div class="flex justify-between items-center mb-1.5 ml-0.5 mr-0.5">
-                <label class="block text-xs font-bold text-slate-700">Mot de Passe</label>
-                <a href="javascript:void(0)" (click)="openForgotPassword()" class="uasz-link-text">Mot de passe oublié ?</a>
-              </div>
-              <input type="password" [(ngModel)]="password" name="password" required placeholder="••••••••"
-                     class="uasz-input"/>
-            </div>
-
-            <div class="pt-2">
-              <button type="submit" [disabled]="loading"
-                      class="uasz-btn-primary w-full py-2.5">
-                <span *ngIf="!loading">Accéder au portail</span>
-                <lucide-icon *ngIf="loading" name="loader-2" class="w-4.5 h-4.5 animate-spin mx-auto text-white"></lucide-icon>
-              </button>
-            </div>
-          </form>
-
-          <!-- Forgot Password Form (Step 1: Request code) -->
-          <form *ngIf="authMode === 'forgot'" (ngSubmit)="sendResetCode()" class="space-y-4">
-            <div class="mb-2">
-              <p class="text-xs text-slate-600 mb-3">
-                Saisissez votre matricule ou adresse e-mail pour recevoir un code de réinitialisation à 6 chiffres.
-              </p>
-              <label class="block text-xs font-bold text-slate-700 mb-1.5 ml-0.5">Matricule ou E-mail</label>
-              <input type="text" [(ngModel)]="matricule" name="forgotIdentifier" required placeholder="ex: 20230001 ou nom@uasz.sn"
-                     class="uasz-input"/>
-            </div>
-
-            <div class="pt-2 space-y-2">
-              <button type="submit" [disabled]="loading" class="uasz-btn-primary w-full py-2.5">
-                <span *ngIf="!loading">Envoyer le code par e-mail</span>
-                <lucide-icon *ngIf="loading" name="loader-2" class="w-4.5 h-4.5 animate-spin mx-auto text-white"></lucide-icon>
-              </button>
-              <div class="flex justify-between items-center pt-1 text-xs">
-                <a href="javascript:void(0)" (click)="authMode = 'reset'; errorMessage = ''" class="uasz-link-text">J'ai déjà un code</a>
-                <a href="javascript:void(0)" (click)="authMode = 'login'; errorMessage = ''" class="text-slate-500 hover:text-slate-800 font-semibold">Retour à la connexion</a>
-              </div>
-            </div>
-          </form>
-
-          <!-- Reset Password Form (Step 2: Enter code & new password) -->
-          <form *ngIf="authMode === 'reset'" (ngSubmit)="confirmResetPassword()" class="space-y-3.5">
-            <p class="text-xs text-slate-600">
-              Saisissez le code à 6 chiffres reçu par e-mail ainsi que votre nouveau mot de passe (8 caractères minimum).
+          <!-- Titre et sous-titre du mode actif -->
+          <div class="text-center md:text-left mb-5">
+            <h1 class="text-[26px] font-bold text-slate-900 leading-tight">
+              {{ authMode === 'login' ? 'Connexion' : (authMode === 'forgot' ? 'Mot de passe oublié' : 'Réinitialisation') }}
+            </h1>
+            <p class="text-[13px] text-slate-500 mt-1 leading-snug">
+              {{ authMode === 'login'
+                ? 'Accès réservé aux électeurs et administrateurs pré-provisionnés'
+                : (authMode === 'forgot'
+                  ? 'Saisissez votre matricule ou adresse e-mail pour recevoir un code de réinitialisation à 6 chiffres.'
+                  : 'Saisissez le code à 6 chiffres reçu par e-mail ainsi que votre nouveau mot de passe (8 caractères minimum).') }}
             </p>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1 ml-0.5">Matricule ou E-mail</label>
-              <input type="text" [(ngModel)]="matricule" name="resetIdentifier" required placeholder="ex: 20230001"
-                     class="uasz-input"/>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1 ml-0.5">Code de réinitialisation (6 chiffres)</label>
-              <input type="text" [(ngModel)]="resetCode" name="resetCode" required maxlength="6" placeholder="123456"
-                     class="uasz-input font-mono tracking-widest text-center"/>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1 ml-0.5">Nouveau mot de passe</label>
-              <input type="password" [(ngModel)]="newPassword" name="newPassword" required placeholder="Minimum 8 caractères"
-                     class="uasz-input"/>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1 ml-0.5">Confirmer le mot de passe</label>
-              <input type="password" [(ngModel)]="confirmNewPassword" name="confirmNewPassword" required placeholder="••••••••"
-                     class="uasz-input"/>
-            </div>
+          </div>
 
-            <div class="pt-2 space-y-2">
-              <button type="submit" [disabled]="loading" class="uasz-btn-primary w-full py-2.5">
-                <span *ngIf="!loading">Réinitialiser le mot de passe</span>
-                <lucide-icon *ngIf="loading" name="loader-2" class="w-4.5 h-4.5 animate-spin mx-auto text-white"></lucide-icon>
-              </button>
-              <div class="flex justify-between items-center pt-1 text-xs">
-                <a href="javascript:void(0)" (click)="sendResetCode()" class="uasz-link-text">Renvoyer un code</a>
-                <a href="javascript:void(0)" (click)="authMode = 'login'; errorMessage = ''" class="text-slate-500 hover:text-slate-800 font-semibold">Retour à la connexion</a>
+          <!-- Mode 1 : Connexion -->
+          <form *ngIf="authMode === 'login'" (ngSubmit)="onSubmit()" class="space-y-3">
+            <div>
+              <label for="login-matricule" class="sr-only">Matricule universitaire</label>
+              <div class="relative">
+                <lucide-icon name="user" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+                <input id="login-matricule" type="text" [(ngModel)]="matricule" name="matricule" required placeholder="Matricule universitaire"
+                       class="pill-input w-full h-[46px] pl-12 pr-4 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] text-slate-900 placeholder-slate-400
+                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
               </div>
             </div>
-          </form>
-        </div>
 
-      </div>
+            <div>
+              <label for="login-password" class="sr-only">Mot de passe</label>
+              <div class="relative">
+                <lucide-icon name="lock" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+                <input id="login-password" type="password" [(ngModel)]="password" name="password" required placeholder="Mot de passe"
+                       class="pill-input w-full h-[46px] pl-12 pr-4 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] text-slate-900 placeholder-slate-400
+                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
+              </div>
+              <div class="flex justify-end mt-1.5 pr-1">
+                <a href="javascript:void(0)" (click)="openForgotPassword()"
+                   class="text-xs font-medium text-[#065f46] hover:underline rounded px-1
+                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857]">
+                  Mot de passe oublié ?
+                </a>
+              </div>
+            </div>
+
+            <ng-container *ngTemplateOutlet="alertMessages"></ng-container>
+
+            <button type="submit" [disabled]="loading"
+                    class="w-full h-[46px] rounded-full bg-[#065f46] hover:bg-[#064e3b] text-white text-sm font-semibold transition
+                           flex items-center justify-center disabled:opacity-50
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857] focus-visible:ring-offset-2">
+              <span *ngIf="!loading">Accéder au portail</span>
+              <lucide-icon *ngIf="loading" name="loader-2" class="w-4 h-4 animate-spin text-white"></lucide-icon>
+            </button>
+          </form>
+
+          <!-- Mode 2 : Mot de passe oublié -->
+          <form *ngIf="authMode === 'forgot'" (ngSubmit)="sendResetCode()" class="space-y-3">
+            <div>
+              <label for="forgot-identifier" class="sr-only">Matricule ou e-mail</label>
+              <div class="relative">
+                <lucide-icon name="user" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+                <input id="forgot-identifier" type="text" [(ngModel)]="matricule" name="forgotIdentifier" required placeholder="Matricule ou e-mail"
+                       class="pill-input w-full h-[46px] pl-12 pr-4 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] text-slate-900 placeholder-slate-400
+                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
+              </div>
+            </div>
+
+            <ng-container *ngTemplateOutlet="alertMessages"></ng-container>
+
+            <button type="submit" [disabled]="loading"
+                    class="w-full h-[46px] rounded-full bg-[#065f46] hover:bg-[#064e3b] text-white text-sm font-semibold transition
+                           flex items-center justify-center disabled:opacity-50
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857] focus-visible:ring-offset-2">
+              <span *ngIf="!loading">Envoyer le code par e-mail</span>
+              <lucide-icon *ngIf="loading" name="loader-2" class="w-4 h-4 animate-spin text-white"></lucide-icon>
+            </button>
+
+            <div class="flex justify-center pt-1">
+              <a href="javascript:void(0)" (click)="switchMode('login')"
+                 class="text-xs font-medium text-[#065f46] hover:underline rounded px-1
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857]">
+                Retour à la connexion
+              </a>
+            </div>
+          </form>
+
+          <!-- Mode 3 : Réinitialisation du mot de passe -->
+          <form *ngIf="authMode === 'reset'" (ngSubmit)="confirmResetPassword()" class="space-y-2.5">
+            <div>
+              <label for="reset-identifier" class="sr-only">Matricule ou e-mail</label>
+              <div class="relative">
+                <lucide-icon name="user" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+                <input id="reset-identifier" type="text" [(ngModel)]="matricule" name="resetIdentifier" required placeholder="Matricule ou e-mail"
+                       class="pill-input w-full h-[44px] pl-12 pr-4 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] text-slate-900 placeholder-slate-400
+                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
+              </div>
+            </div>
+
+            <div>
+              <label for="reset-code" class="sr-only">Code de réinitialisation</label>
+              <div class="relative">
+                <lucide-icon name="key" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+                <input id="reset-code" type="text" [(ngModel)]="resetCode" name="resetCode" required maxlength="6" placeholder="123456"
+                       class="pill-input w-full h-[44px] pl-12 pr-12 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] font-mono text-center tracking-[0.35em] text-slate-900 placeholder-slate-400
+                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
+              </div>
+            </div>
+
+            <div>
+              <label for="reset-new-password" class="sr-only">Nouveau mot de passe</label>
+              <div class="relative">
+                <lucide-icon name="lock" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+                <input id="reset-new-password" type="password" [(ngModel)]="newPassword" name="newPassword" required placeholder="Nouveau mot de passe (min. 8 car.)"
+                       class="pill-input w-full h-[44px] pl-12 pr-4 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] text-slate-900 placeholder-slate-400
+                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
+              </div>
+            </div>
+
+            <div>
+              <label for="reset-confirm-password" class="sr-only">Confirmer le mot de passe</label>
+              <div class="relative">
+                <lucide-icon name="lock" class="pill-icon w-[18px] h-[18px] text-slate-400 absolute left-[18px] top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"></lucide-icon>
+                <input id="reset-confirm-password" type="password" [(ngModel)]="confirmNewPassword" name="confirmNewPassword" required placeholder="Confirmer le mot de passe"
+                       class="pill-input w-full h-[44px] pl-12 pr-4 rounded-full bg-[#f3f4f6] border border-slate-200 text-[14px] text-slate-900 placeholder-slate-400
+                              focus:outline-none focus:border-[#047857] focus:ring-2 focus:ring-[#047857]/25 transition"/>
+              </div>
+            </div>
+
+            <ng-container *ngTemplateOutlet="alertMessages"></ng-container>
+
+            <button type="submit" [disabled]="loading"
+                    class="w-full h-[46px] rounded-full bg-[#065f46] hover:bg-[#064e3b] text-white text-sm font-semibold transition
+                           flex items-center justify-center disabled:opacity-50
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857] focus-visible:ring-offset-2">
+              <span *ngIf="!loading">Réinitialiser le mot de passe</span>
+              <lucide-icon *ngIf="loading" name="loader-2" class="w-4 h-4 animate-spin text-white"></lucide-icon>
+            </button>
+
+            <div class="flex justify-between items-center pt-1 text-xs">
+              <a href="javascript:void(0)" (click)="sendResetCode()"
+                 class="font-medium text-[#065f46] hover:underline rounded px-1
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857]">
+                Renvoyer un code
+              </a>
+              <a href="javascript:void(0)" (click)="switchMode('login')"
+                 class="font-medium text-[#065f46] hover:underline rounded px-1
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857]">
+                Retour à la connexion
+              </a>
+            </div>
+          </form>
+
+          <!-- Alertes compactes juste au-dessus du bouton principal -->
+          <ng-template #alertMessages>
+            <div *ngIf="errorMessage"
+                 [class]="isOfflineError ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-red-50 border-red-200 text-[#dc2626]'"
+                 class="px-3.5 py-2 rounded-2xl border text-xs font-medium flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <lucide-icon [name]="isOfflineError ? 'info' : 'alert-triangle'" [class]="isOfflineError ? 'text-amber-600' : 'text-[#dc2626]'" class="w-3.5 h-3.5 shrink-0"></lucide-icon>
+                <span>{{ errorMessage }}</span>
+              </div>
+              <button (click)="errorMessage = ''" type="button"
+                      class="text-slate-400 hover:text-slate-600 shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857]">
+                <lucide-icon name="x" class="w-3.5 h-3.5"></lucide-icon>
+              </button>
+            </div>
+
+            <div *ngIf="successMessage"
+                 class="px-3.5 py-2 rounded-2xl border bg-emerald-50 border-emerald-200 text-[#047857] text-xs font-medium flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <lucide-icon name="check-circle-2" class="w-3.5 h-3.5 text-[#047857] shrink-0"></lucide-icon>
+                <span>{{ successMessage }}</span>
+              </div>
+              <button (click)="successMessage = ''" type="button"
+                      class="text-emerald-600 hover:text-emerald-800 shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857]">
+                <lucide-icon name="x" class="w-3.5 h-3.5"></lucide-icon>
+              </button>
+            </div>
+          </ng-template>
+        </div>
+      </main>
     </div>
   `
 })
@@ -161,6 +399,7 @@ export class LoginComponent implements OnInit {
   authMode: 'login' | 'forgot' | 'reset' = 'login';
   loading = false;
   errorMessage = '';
+  successMessage = '';
   isOfflineError = false;
 
   private authService = inject(AuthService);
@@ -176,15 +415,23 @@ export class LoginComponent implements OnInit {
     });
   }
 
+  switchMode(mode: 'login' | 'forgot' | 'reset'): void {
+    this.authMode = mode;
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
   onSubmit(): void {
     if (!this.matricule || !this.password) {
       this.isOfflineError = false;
+      this.successMessage = '';
       this.errorMessage = 'Veuillez saisir votre matricule et mot de passe.';
       return;
     }
 
     this.loading = true;
     this.errorMessage = '';
+    this.successMessage = '';
     this.isOfflineError = false;
 
     this.authService.login(this.matricule, this.password).subscribe({
@@ -198,13 +445,14 @@ export class LoginComponent implements OnInit {
       error: (err) => {
         this.loading = false;
         this.isOfflineError = !!err.isOffline;
-        this.errorMessage = err.error?.message || 'Identifiants invalides. Les comptes sont pré-provisionnés par l\'administration.';
+        this.errorMessage = err.error?.message || "Identifiants invalides. Les comptes sont pré-provisionnés par l'administration.";
       }
     });
   }
 
   openForgotPassword(): void {
     this.errorMessage = '';
+    this.successMessage = '';
     const ident = this.matricule?.trim();
     if (ident) {
       this.sendResetCode();
@@ -216,16 +464,19 @@ export class LoginComponent implements OnInit {
   sendResetCode(): void {
     const ident = this.matricule?.trim();
     if (!ident) {
+      this.successMessage = '';
       this.errorMessage = 'Veuillez saisir votre matricule ou adresse e-mail.';
       return;
     }
 
     this.loading = true;
     this.errorMessage = '';
+    this.successMessage = '';
     this.authService.forgotPassword(ident).subscribe({
       next: (res) => {
         this.loading = false;
         this.authMode = 'reset';
+        this.successMessage = res.message;
         this.notificationService.showSuccess(res.message, 'Réinitialisation');
       },
       error: (err) => {
@@ -239,20 +490,24 @@ export class LoginComponent implements OnInit {
     const ident = this.matricule?.trim();
     const code = this.resetCode?.trim();
     if (!ident || !code || !this.newPassword) {
+      this.successMessage = '';
       this.errorMessage = 'Tous les champs sont obligatoires.';
       return;
     }
     if (this.newPassword.length < 8) {
+      this.successMessage = '';
       this.errorMessage = 'Le nouveau mot de passe doit contenir au moins 8 caractères.';
       return;
     }
     if (this.newPassword !== this.confirmNewPassword) {
+      this.successMessage = '';
       this.errorMessage = 'Les deux mots de passe ne correspondent pas.';
       return;
     }
 
     this.loading = true;
     this.errorMessage = '';
+    this.successMessage = '';
     this.authService.resetPassword(ident, code, this.newPassword).subscribe({
       next: (res) => {
         this.loading = false;
@@ -262,6 +517,7 @@ export class LoginComponent implements OnInit {
         this.newPassword = '';
         this.confirmNewPassword = '';
         this.authMode = 'login';
+        this.successMessage = res.message;
       },
       error: (err) => {
         this.loading = false;
