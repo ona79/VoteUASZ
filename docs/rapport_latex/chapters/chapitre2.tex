@@ -1,0 +1,149 @@
+\chapter{Conception}
+
+\section{Architecture logicielle et déploiement}
+
+L'architecture de \textbf{VoteUASZ} suit un modèle 3-tiers découplé :
+\begin{itemize}
+    \item \textbf{Frontend (Angular 17 / Vercel)} : 11 composants \textit{standalone} avec chargement paresseux, \textit{Guards} RBAC, intercepteur JWT (\texttt{jwtInterceptor}), client STOMP/RxJS, graphiques \textbf{Chart.js} et Service Worker PWA (\texttt{ngsw-config.json}).
+    \item \textbf{Backend (Spring Boot 3.2.3 / Java 21 / Render)} : filtres \texttt{RateLimitingFilter} et \texttt{JwtAuthenticationFilter}, 9 contrôleurs REST (\texttt{/api/v1/**}), 12 services métier et broker WebSocket STOMP (\texttt{/ws}).
+    \item \textbf{Persistance \& Messagerie} : \textbf{PostgreSQL 16} en production (H2 en tests) et envoi d'e-mails via l'API HTTPS Brevo (ou SMTP MailHog en environnement local Docker).
+\end{itemize}
+
+La figure~\ref{fig:components-packages} présente l'organisation des composants et packages du dépôt, et la figure~\ref{fig:deployment} détaille l'architecture de déploiement issue de \texttt{render.yaml}, \texttt{vercel.json} et \texttt{docker-compose.yml}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth,height=0.50\textheight,keepaspectratio]{components-packages.pdf}
+    \caption{Diagramme de composants et packages (\texttt{frontend/src/app} et \texttt{sn.uasz.vote})}
+    \label{fig:components-packages}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth,height=0.45\textheight,keepaspectratio]{deployment.pdf}
+    \caption{Diagramme de déploiement (Vercel, Render, PostgreSQL 16, Brevo et Docker local)}
+    \label{fig:deployment}
+\end{figure}
+
+\section{Modélisation UML et base de données}
+
+\subsection{Cas d'utilisation et workflow global}
+La figure~\ref{fig:use-case} synthétise les cas d'utilisation par rôle à partir des contrôleurs REST. La figure~\ref{fig:activity-workflow} modélise le déroulement complet d'un scrutin de sa création à l'export du procès-verbal.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth,height=0.50\textheight,keepaspectratio]{use-case-global.pdf}
+    \caption{Diagramme de cas d'utilisation global de VoteUASZ}
+    \label{fig:use-case}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.82\textwidth,height=0.55\textheight,keepaspectratio]{activity-election-workflow.pdf}
+    \caption{Diagramme d'activités du workflow complet d'une élection}
+    \label{fig:activity-workflow}
+\end{figure}
+
+\subsection{Diagrammes de séquence : authentification et vote complet}
+Les figures~\ref{fig:seq-auth} et~\ref{fig:seq-vote} décrivent respectivement la cinématique d'authentification (JWT + Refresh Token rotatif + réinitialisation) et le protocole de vote en trois étapes (\texttt{/vote/request-otp}, \texttt{/vote/verify-otp}, \texttt{/vote/submit}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth,height=0.48\textheight,keepaspectratio]{sequence-auth-otp.pdf}
+    \caption{Diagramme de séquence : authentification JWT, Refresh Token et réinitialisation}
+    \label{fig:seq-auth}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth,height=0.55\textheight,keepaspectratio]{sequence-vote-complet.pdf}
+    \caption{Diagramme de séquence : flux complet de vote sécurisé et diffusion STOMP}
+    \label{fig:seq-vote}
+\end{figure}
+
+\subsection{Diagramme de classes et modèle logique de données (MLD)}
+La base de données s'appuie sur \textbf{11 entités JPA} et \textbf{6 énumérations} (tableau~\ref{tab:entities}, figures~\ref{fig:class-diagram} et~\ref{fig:mld-schema}).
+
+\begin{table}[H]
+\centering
+\caption{Les 11 entités JPA du dépôt (\texttt{sn.uasz.vote.entity})}
+\label{tab:entities}
+\small
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\rowcolor{uaszlight}
+\textbf{Entité} & \textbf{Table} & \textbf{Rôle et champs clés} \\
+\midrule
+\texttt{User} & \texttt{users} & \texttt{matricule}, \texttt{email} (uniques), \texttt{role}, \texttt{typeElecteur}, \texttt{ufr/filiere/niveau}, \texttt{failedLoginAttempts}, \texttt{lockedUntil}. \\
+\texttt{Election} & \texttt{elections} & \texttt{titre}, \texttt{type}, \texttt{statut}, \texttt{dateDebut}, \texttt{dateFin}, cibles UFR/filière/niveau. \\
+\texttt{Candidature} & \texttt{candidatures} & \texttt{nomListe}, URLs (\texttt{photoUrl}, \texttt{programmePdf}, \texttt{cvUrl}), \texttt{statut}, \texttt{motifRejet}. \\
+\texttt{CampaignPost} & \texttt{campaign\_posts} & Publications de campagne (\texttt{titre}, \texttt{contenu}, \texttt{afficheUrl}, \texttt{videoEmbedUrl}). \\
+\texttt{VoteOTP} & \texttt{vote\_otps} & \texttt{codeHash} (BCrypt), \texttt{expiresAt} (5\,min), \texttt{used}, \texttt{attemptsCount}. \\
+\texttt{VoteToken} & \texttt{vote\_tokens} & \texttt{tokenHash} (SHA-256, unique), \texttt{expiresAt} (10\,min), \texttt{used}. \\
+\texttt{Ballot} & \texttt{ballots} & \texttt{id} (\texttt{UUID}), \texttt{candidatureId}, \texttt{encryptedPayload}, \texttt{ballotHash}, \texttt{previousHash}, \texttt{sequenceNumber}. \\
+\texttt{VoterAuditLog} & \texttt{voter\_audit\_logs} & \texttt{votedAt} (tronqué à l'heure), \texttt{ipHash}, contrainte \texttt{UNIQUE(user\_id, election\_id)}. \\
+\texttt{Complaint} & \texttt{complaints} & \texttt{sujet}, \texttt{description}, \texttt{statut}, \texttt{reponseCommission}, \texttt{createdAt}. \\
+\texttt{RefreshToken} & \texttt{refresh\_tokens} & \texttt{tokenHash} (SHA-256, unique), \texttt{expiresAt} (7\,j), \texttt{revoked}. \\
+\texttt{PasswordResetToken} & \texttt{password\_reset\_tokens} & \texttt{codeHash} (BCrypt), \texttt{expiresAt} (15\,min), \texttt{used}. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth,height=0.58\textheight,keepaspectratio]{class-diagram.pdf}
+    \caption{Diagramme de classes des 11 entités JPA (dissociation \texttt{Ballot}/\texttt{User})}
+    \label{fig:class-diagram}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth,height=0.55\textheight,keepaspectratio]{mld-schema.pdf}
+    \caption{Modèle Logique de Données (MLD) PostgreSQL soulignant l'absence de clé entre \texttt{ballots} et \texttt{users}}
+    \label{fig:mld-schema}
+\end{figure}
+
+\section{Analyse des menaces, contre-mesures et limites cryptographiques}
+
+Le tableau~\ref{tab:menaces} synthétise les menaces identifiées et les mécanismes réellement implémentés dans le code, sans surestimer les garanties cryptographiques.
+
+\begin{table}[H]
+\centering
+\caption{Analyse Menaces / Contre-mesures / Limites réelles du code}
+\label{tab:menaces}
+\small
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
+\toprule
+\rowcolor{uaszlight}
+\textbf{Menace} & \textbf{Contre-mesure implémentée} & \textbf{Limite résiduelle honnête} \\
+\midrule
+Double vote & Contrainte \texttt{UNIQUE(user\_id, election\_id)} sur \texttt{voter\_audit\_logs}, vérification préalable et invalidation du \texttt{VoteToken}. & Protection applicative et SGBD complète pour un compte donné. \\
+Force brute / DDoS applicatif & \texttt{RateLimitingFilter} (20\,req/min/IP sur login et OTP), verrouillage 5\,min après 5 échecs, \texttt{ClientIpResolver} anti-spoofing proxy. & Fenêtre en mémoire JVM (non partagée si plusieurs instances backend). \\
+Rupture du secret du vote & Absence totale de clé étrangère entre \texttt{ballots} et \texttt{users} ; \texttt{Ballot.id} en \texttt{UUID} sans \texttt{createdAt} ; \texttt{votedAt} tronqué à l'heure et IP salée. & \textbf{Corrélation d'ordre possible} : dans \texttt{VotingService.submitVote()}, \texttt{VoterAuditLog} (ID séquentiel) et \texttt{Ballot.sequenceNumber} sont insérés dans la même transaction. \\
+Accès au contenu des bulletins & Chiffrement \textbf{AES-256-GCM} (PBKDF2WithHmacSHA256, 65\,536 itérations, IV 12\,octets). & \textbf{Clé détenue par le serveur} (\texttt{CRYPTO\_SECRET}) : le serveur peut déchiffrer à tout moment ; de plus, \texttt{candidatureId} est stocké en clair dans \texttt{ballots} pour le décompte SQL temps réel. \\
+Altération silencieuse des bulletins & Chaînage \textbf{SHA-256} (\texttt{previousHash} depuis \texttt{"GENESIS"}) vérifié par \texttt{AuditService.verifyBallotChain()}. & \textbf{Aucune signature asymétrique RSA} ni reçu individuel vérifiable par l'électeur ; le PV PDF OpenPDF n'est pas signé numériquement (X.509). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Patrons de conception et stack technique}
+
+\begin{table}[H]
+\centering
+\caption{Patrons de conception réels et versions exactes des dépendances}
+\label{tab:patterns-stack}
+\small
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\rowcolor{uaszlight}
+\textbf{Pattern / Couche} & \textbf{Statut / Version} & \textbf{Implémentation réelle dans le dépôt} \\
+\midrule
+\textbf{Observer} & Présent & Broker STOMP (\texttt{SimpMessagingTemplate}) + \texttt{BehaviorSubject} Angular. \\
+\textbf{Repository / DTO / Builder} & Présents & 11 \texttt{JpaRepository}, DTOs dédiés, Lombok \texttt{@Builder}, IoC Spring. \\
+\textit{State / Strategy} & \textit{Switch sur enum} & \texttt{ElectionStateMachine} et \texttt{EligibilityService} utilisent des \texttt{switch} Java 21. \\
+\midrule
+Backend & Java 21 / Boot 3.2.3 & JJWT \texttt{0.11.5}, OpenPDF \texttt{1.3.30}, springdoc \texttt{2.3.0}, JaCoCo \texttt{0.8.11}, Checkstyle \texttt{3.3.1}. \\
+Frontend & Angular \texttt{\^{}17.3.0} & RxJS \texttt{\~{}7.8.0}, TailwindCSS \texttt{\^{}3.4.19}, Chart.js \texttt{\^{}4.5.1}, STOMP.js \texttt{\^{}7.3.0}. \\
+\bottomrule
+\end{tabularx}
+\end{table}

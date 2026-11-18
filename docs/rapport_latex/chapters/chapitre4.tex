@@ -1,0 +1,26 @@
+\chapter{Tests, Qualité, Déploiement et Bilan}
+
+\section{Tests automatisés et qualité}
+
+\begin{uaszbox}{Métriques réelles vérifiées (\texttt{mvn -B verify})}
+\begin{itemize}
+    \item \textbf{Backend (28 classes de tests)} : \textbf{122 tests exécutés, 0 échec, 0 erreur} (\texttt{BUILD SUCCESS}).
+    \item \textbf{Couverture JaCoCo (50 classes)} : Instructions \textbf{74,30\,\%} (\texttt{5\,627/7\,573}), Lignes \textbf{74,79\,\%}, Méthodes \textbf{70,39\,\%}, Classes \textbf{94,00\,\%}.
+    \item \textbf{Checkstyle} : \textbf{0 violation} (\texttt{backend/checkstyle.xml}).
+    \item \textbf{Frontend} : bundle production initial de \textbf{418,54\,kB} (9 chunks paresseux) ; 25 tests Karma/Jasmine (18 succès, 7 échecs liés aux mocks \texttt{HttpClient}/icônes).
+\end{itemize}
+\end{uaszbox}
+
+\section{Outillage DevSecOps et déploiement}
+
+\begin{itemize}
+    \item \textbf{CI/CD} : GitHub Actions (\texttt{.github/workflows/ci.yml}), Docker multi-stage (\texttt{Dockerfile}), \texttt{docker-compose.yml} (PostgreSQL 16 + MailHog), \textbf{Render} (\texttt{render.yaml}) et \textbf{Vercel} (\texttt{vercel.json}).
+    \item \textbf{Qualité, charge \& sécurité} : \texttt{sonar-project.properties} (SonarQube), \texttt{perf/load-test.js} (test de charge \textbf{k6} 25 VUs, SLA $p_{95} < 500\,\text{ms}$) et \texttt{.github/workflows/zap-baseline.yml} (scan \textbf{OWASP ZAP}).
+\end{itemize}
+
+\section{Écarts justifiés, limites et perspectives}
+
+\begin{itemize}
+    \item \textbf{Choix pragmatiques} : OTP par e-mail (Brevo) plutôt que SMS payant ; \textbf{OpenPDF} au lieu de JasperReports ; URLs de médias au lieu d'upload binaire sur stockage éphémère.
+    \item \textbf{Perspectives} : correction des 7 tests unitaires Angular, ajout de \textbf{Testcontainers} PostgreSQL en CI, stockage objet S3/Cloudinary, canal OTP SMS et synchronisation hors-ligne complète.
+\end{itemize}
