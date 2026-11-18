@@ -35,15 +35,15 @@
 
 | Connexion sécurisée | Liste des scrutins |
 |---|---|
-| <img src="./docs/rapport_latex/images/01-login.png" alt="Page de connexion" width="420" /> | <img src="./docs/rapport_latex/images/02-elections.png" alt="Liste des scrutins" width="420" /> |
+| <img src="./report/figures/3-2-1-login-desktop.png" alt="Page de connexion" width="420" /> | <img src="./report/figures/3-2-2-elections-tableau.png" alt="Liste des scrutins" width="420" /> |
 
 | Vote sécurisé par OTP | Résultats temps réel (STOMP + Chart.js) |
 |---|---|
-| <img src="./docs/rapport_latex/images/03-vote-detail.png" alt="Détail de vote et OTP" width="420" /> | <img src="./docs/rapport_latex/images/06-resultats-live.png" alt="Résultats temps réel" width="420" /> |
+| <img src="./report/figures/3-2-3-election-detail-stepper.png" alt="Détail de vote et stepper OTP" width="420" /> | <img src="./report/figures/3-2-3-election-detail-results-live.png" alt="Résultats temps réel" width="420" /> |
 
 | Administration & Audit SHA-256 | Procès-Verbal PDF officiel |
 |---|---|
-| <img src="./docs/rapport_latex/images/10-audit.png" alt="Journal d'audit SHA-256" width="420" /> | <img src="./docs/rapport_latex/images/11-pv-pdf.png" alt="Procès-Verbal PDF" width="420" /> |
+| <img src="./report/figures/3-2-5-admin-audit.png" alt="Journal d'audit SHA-256" width="420" /> | <img src="./report/figures/3-2-9-pv-pdf.png" alt="Procès-Verbal PDF" width="420" /> |
 
 ---
 
