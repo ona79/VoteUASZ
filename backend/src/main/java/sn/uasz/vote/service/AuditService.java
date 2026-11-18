@@ -59,6 +59,9 @@ public class AuditService {
     public boolean verifyBallotChain(List<Ballot> ballots) {
         String expectedPreviousHash = "GENESIS";
         for (Ballot ballot : ballots) {
+            if (ballot.getPreviousHash() == null || ballot.getSequenceNumber() == null) {
+                return false;
+            }
             if (!expectedPreviousHash.equals(ballot.getPreviousHash())) {
                 return false;
             }
