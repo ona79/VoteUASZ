@@ -1,11 +1,12 @@
 \chapter{Implémentation, Tests et Résultats}
+\label{chap:3}
 
 \section{Authentification JWT, Refresh Token et sécurité réseau}
 
 \begin{itemize}
-    \item \textbf{JWT (\texttt{HS256}) et Refresh Token rotatif} : jeton d'accès valable 24\,h (\texttt{JwtTokenProvider.java}), associé à un \texttt{RefreshToken} de 7\,jours stocké haché en \textbf{SHA-256} (\texttt{/auth/refresh}, \texttt{/auth/logout}).
-    \item \textbf{Protection anti-force brute} : verrouillage de 5\,minutes après 5 échecs de connexion et filtre \texttt{RateLimitingFilter} (20\,req/min/IP sur \texttt{/auth/login}, \texttt{/vote/request-otp}, \texttt{/vote/verify-otp}), avec résolution d'IP réelle derrière proxy (\texttt{ClientIpResolver}).
-    \item \textbf{Réinitialisation} : \texttt{/auth/forgot-password} génère un code à 6 chiffres (validité 15\,min, hash BCrypt) et renvoie une réponse neutre anti-énumération ; \texttt{/auth/reset-password} met à jour le mot de passe et révoque les sessions actives.
+    \item \textbf{JWT (\texttt{HS256}) et Refresh Token rotatif} : jeton d'accès valable 24\,h (\texttt{JwtTokenProvider.java}), associé à un \texttt{RefreshToken} de 7\,jours (\texttt{604\,800\,000\,ms}) stocké haché en \textbf{SHA-256} (\texttt{/auth/refresh}, \texttt{/auth/logout}) ; toute réutilisation d'un jeton révoqué est refusée en \texttt{401 Unauthorized} (\texttt{RefreshTokenAndPassword\allowbreak ManagementTest\#\allowbreak refreshToken\_rotationAndLogout}).
+    \item \textbf{Protection anti-force brute} : verrouillage de 5\,minutes après 5 échecs de connexion et filtre \texttt{RateLimitingFilter} (20\,req/min/IP sur \texttt{/auth/login}, \texttt{/auth/forgot-password}, \texttt{/auth/reset-password}, \texttt{/vote/request-otp}, \texttt{/vote/verify-otp}, HTTP \texttt{429}), avec résolution d'IP réelle derrière proxy (\texttt{ClientIpResolver}).
+    \item \textbf{Réinitialisation et changement de mot de passe forcé} : \texttt{/auth/forgot-password} génère un code à 6 chiffres (validité 15\,min, hash BCrypt, cooldown 60\,s, invalidation des anciens codes non utilisés) et renvoie une réponse neutre \texttt{200 OK} ; \texttt{/auth/reset-password} limite à 5 essais par code, renvoie une erreur \texttt{400} générique, vérifie la longueur ($\ge 8$ caractères), réinitialise \texttt{failedLoginAttempts = 0}, \texttt{lockedUntil = null} et \texttt{mustChangePassword = false}, et révoque tous les refresh tokens. Les comptes importés par CSV (\texttt{ELECTEUR}, \texttt{CANDIDAT}) démarrent avec \texttt{mustChangePassword = true} : tout endpoint authentifié (hors \texttt{/auth/change-password}, \texttt{/auth/logout}, \texttt{/auth/refresh}) renvoie \texttt{403 PASSWORD\_CHANGE\_REQUIRED} et le canal STOMP bloque \texttt{CONNECT}/\texttt{SUBSCRIBE} ; \texttt{/auth/change-password} exige un mot de passe $\ge 8$ caractères différent de l'ancien (\texttt{PasswordSecurityHardeningTest}).
 \end{itemize}
 
 \section{Vote sécurisé, chiffrement AES-256-GCM et chaînage SHA-256}
@@ -27,8 +28,8 @@ $$\text{ballotHash}_n = \text{SHA-256}\left(\text{previousHash}_n \,\|\, \text{e
 
 \begin{itemize}
     \item \textbf{WebSocket STOMP} : diffusion des résultats sur \texttt{/topic/results/\{id\}} sécurisée par \texttt{ChannelInterceptor}, alimentant automatiquement les graphiques \textbf{Chart.js} côté Angular.
-    \item \textbf{Procès-Verbal PDF} : génération programmatique via \textbf{OpenPDF 1.3.30} (\texttt{PdfReportService.java}) dès l'état \texttt{CLOTURE}.
-    \item \textbf{Réclamations} : dépôt autorisé uniquement aux états \texttt{PUBLICATION} et \texttt{CLOTURE} dans un délai de 48\,heures après \texttt{dateFin} (\texttt{ComplaintService.java}).
+    \item \textbf{Procès-Verbal PDF} : génération programmatique via \textbf{OpenPDF 1.3.30} (\texttt{PdfReportService.java}). Au passage à \texttt{CLOTURE}, \texttt{ElectionService.changeStatus} génère automatiquement le PV et l'écrit dans \texttt{reports/pv\_election\_\{id\}.pdf} (stockage disque éphémère sur Render Free). Par ailleurs, \texttt{GET /api/v1/results/\{id\}/export-pdf} régénère le PDF à chaque appel ; il est accessible à tout utilisateur authentifié aux statuts \texttt{DEPOUILLEMENT}, \texttt{PUBLICATION} et \texttt{CLOTURE}, et avant cela uniquement à \texttt{SUPER\_ADMIN} et \texttt{COMMISSION\_ELECTORALE}. Avant \texttt{CLOTURE}, le PV porte la mention « PROVISOIRE (scrutin non clôturé) » ; le PV n'est pas signé numériquement.
+    \item \textbf{Réclamations} : dépôt autorisé uniquement aux états \texttt{PUBLICATION} et \texttt{CLOTURE} dans un délai de 48 heures calendaires après \texttt{dateFin} (\texttt{ComplaintService.java}).
 \end{itemize}
 
 \section{Interfaces applicatives réalisées}
@@ -216,14 +217,14 @@ Les figures~\ref{fig:admin-scrutins} à~\ref{fig:swagger} présentent l'espace S
     \centering
     \begin{minipage}{0.62\textwidth}
         \centering
-        \includegraphics[width=\textwidth,height=0.40\textheight,keepaspectratio]{3-2-8-reclamations-electeur.png}
+        \includegraphics[width=\textwidth,height=0.40\textheight,keepaspectratio]{3-2-8-reclamations-electeur.png} % TODO-recapture
         \caption{Réclamations côté électeur (\texttt{/reclamations})}
         \label{fig:reclam-elec}
     \end{minipage}
     \hfill
     \begin{minipage}{0.34\textwidth}
         \centering
-        \includegraphics[width=\textwidth,height=0.40\textheight,keepaspectratio]{3-2-8-reclamations-mobile.png}
+        \includegraphics[width=\textwidth,height=0.40\textheight,keepaspectratio]{3-2-8-reclamations-mobile.png} % TODO-recapture
         \caption{Réclamations mobile (\texttt{390x844})}
         \label{fig:reclam-mob}
     \end{minipage}
@@ -249,10 +250,10 @@ Les figures~\ref{fig:admin-scrutins} à~\ref{fig:swagger} présentent l'espace S
 \section{Tests, qualité et critères de validation}
 
 \subsection{Suite de tests Backend (\texttt{mvn -B verify})}
-Exécutée sous Java 21, la commande \texttt{mvn -B verify} valide :
+Exécutée sous Java 21 (\texttt{OpenJDK 21.0.12.1}), la commande \texttt{mvn -B verify} valide :
 \begin{itemize}
-    \item \textbf{Tests JUnit / Spring Boot} : \textbf{122 tests exécutés, 0 échec, 0 erreur, 0 ignoré} (\texttt{BUILD SUCCESS}).
-    \item \textbf{Couverture JaCoCo 0.8.11 (50 classes)} : Instructions \textbf{74,30\,\%} (\texttt{5\,632/7\,580}), Branches \textbf{57,10\,\%} (\texttt{358/627}), Lignes \textbf{74,68\,\%} (\texttt{1\,233/1\,651}), Méthodes \textbf{70,39\,\%} (\texttt{164/233}), Classes \textbf{94,00\,\%} (\texttt{47/50}) (figure~\ref{fig:jacoco}).
+    \item \textbf{Tests JUnit / Spring Boot} : \textbf{154 tests exécutés, 0 échec, 0 erreur, 0 ignoré} (\texttt{BUILD SUCCESS}).
+    \item \textbf{Couverture JaCoCo 0.8.11 (53 classes)} : Instructions \textbf{65,17\,\%} (\texttt{6\,424/9\,857}), Branches \textbf{63,10\,\%} (\texttt{436/691}), Lignes \textbf{70,87\,\%} (\texttt{1\,372/1\,936}), Méthodes \textbf{74,09\,\%} (\texttt{183/247}), Classes \textbf{92,45\,\%} (\texttt{49/53}) (figure~\ref{fig:jacoco}). À titre indicatif, hors classes d'initialisation \texttt{DemoDataSeeder} et \texttt{DataInitializer}, la couverture atteint \textbf{86,58\,\%} en instructions (\texttt{6\,424/7\,420}), \textbf{88,46\,\%} en lignes (\texttt{1\,372/1\,551}) et \textbf{67,60\,\%} en branches (\texttt{436/645}).
     \item \textbf{Checkstyle 3.3.1} : \textbf{0 violation} (\texttt{backend/checkstyle.xml}).
 \end{itemize}
 
@@ -265,8 +266,8 @@ Exécutée sous Java 21, la commande \texttt{mvn -B verify} valide :
 
 \subsection{Tests Frontend Angular et taille du bundle}
 \begin{itemize}
-    \item \textbf{Tests Karma/Jasmine (\texttt{ng test})} : \textbf{26 tests exécutés, 26 succès, 0 échec}.
-    \item \textbf{Build de production (\texttt{ng build --configuration production})} : bundle initial total de \textbf{419,65\,kB} (\textbf{109,08\,kB} transférés) et \textbf{12 chunks} chargés à la demande.
+    \item \textbf{Tests Karma/Jasmine (\texttt{ng test --watch=false --browsers=ChromeHeadless})} : \textbf{28 tests exécutés, 28 succès, 0 échec}.
+    \item \textbf{Build de production (\texttt{ng build --configuration production})} : bundle initial total de \textbf{430,96\,kB} bruts (\textbf{111,06\,kB} transférés) et \textbf{13 chunks} chargés à la demande.
 \end{itemize}
 
 \subsection{Synthèse des critères de validation}
@@ -280,13 +281,33 @@ Exécutée sous Java 21, la commande \texttt{mvn -B verify} valide :
 \rowcolor{uaszlight}
 \textbf{Critère} & \textbf{Méthode} & \textbf{Résultat mesuré} \\
 \midrule
-Logique métier & \texttt{mvn -B verify} & \textbf{Réussi} : 122/122 tests, 74,30\,\% instructions, 0 violation Checkstyle. \\
-Composants UI & \texttt{ng test} (ChromeHeadless) & \textbf{Réussi} : 26/26 tests passés. \\
-Taille bundle & \texttt{ng build --configuration production} & \textbf{Réussi} : 419,65\,kB initial (109,08\,kB transférés). \\
+Logique métier & \texttt{mvn -B verify} & \textbf{Réussi} : 154/154 tests, 65,17\,\% instructions, 70,87\,\% lignes, 63,10\,\% branches, 0 violation Checkstyle. \\
+Composants UI & \texttt{ng test} (ChromeHeadless) & \textbf{Réussi} : 28/28 tests passés. \\
+Taille bundle & \texttt{ng build --configuration production} & \textbf{Réussi} : 430,96\,kB initial brut (111,06\,kB transférés). \\
 Chaîne des bulletins & \texttt{AuditService.verifyBallotChain()} & \textbf{Réussi} : \texttt{chainValid=true} sur 25 + 3 + 4 bulletins réels. \\
 Charge (\texttt{k6}) & Script \texttt{perf/load-test.js} & \textbf{Non testé} (\texttt{k6} non installé sur la machine locale). \\
 Scan OWASP ZAP & \texttt{.github/workflows/zap-baseline.yml} & \textbf{Non testé} localement (workflow manuel GitHub Actions). \\
 Performance 3G & Lighthouse avec throttling 3G & \textbf{Non testé} (à exécuter sur l'environnement de production). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Critères de réussite du cahier des charges $\rightarrow$ preuves et limites}
+\label{tab:criteres-cahier-preuve}
+\small
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\rowcolor{uaszlight}
+\textbf{Critère du cahier} & \textbf{Preuve vérifiée (tests, contraintes, captures) et limite éventuelle} \\
+\midrule
+Un compte ne vote qu'une fois & \texttt{AntiDoubleVoteTest} (\texttt{requestOtp\_alreadyVoted\_throwsException}, \texttt{submitVote\_usedToken\_throwsException}), contrainte SGBD \texttt{UNIQUE(user\_id, election\_id)}, \texttt{FullElectionWorkflowIntegrationTest}. \\
+Résultats temps réel sans rechargement & Figure~\ref{fig:detail-results} et test Karma \texttt{should update liveResults on WebSocket push and switch chartType}. \textit{Limite :} \texttt{WebSocketService} est simulé dans le test unitaire, aucun test STOMP d'intégration automatisé (vérifié manuellement en démonstration). \\
+Audit complet, exportable, sans identité & \texttt{AnonymityAndCryptoAuditTest\#\allowbreak schemaDissociation\_\allowbreak noDirectLinkBetweenVoterAndBallot}, \texttt{BallotHashChainTest\#\allowbreak ballotChain\_isLinkedAndTamperEvident}, \texttt{AuditCsvExportTest\#\allowbreak generateAuditCsv\_\allowbreak producesExpectedFormatWithoutIdentifyingData}, figure~\ref{fig:admin-audit}. \\
+OTP expiré (5\,min) et token à usage unique & \texttt{AntiDoubleVoteTest\#verifyOtp\_expiredOtp\_throwsException} et \texttt{\#submitVote\_usedToken\_throwsException}. \\
+Interface mobile & Captures \texttt{390x844} (figures~\ref{fig:login-mobile}, \ref{fig:elec-mob}, \ref{fig:detail-mobile}, \ref{fig:reclam-mob}), aucun test automatisé, test 3G Lighthouse « Non testé ». \\
+PV à la clôture & \texttt{FullElectionWorkflowIntegrationTest\#testFullElectionLifecycle}, figure~\ref{fig:pv-pdf}. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -312,6 +333,7 @@ Export PV JasperReports & Génération programmatique via OpenPDF 1.3.30 & Poids
 Upload binaire médias & URLs externes (\texttt{photoUrl}, \texttt{programmePdf}, \texttt{cvUrl}, \texttt{afficheUrl}) & Système de fichiers éphémère sur Render Free sans stockage objet S3/Cloudinary. \\
 Tests CI Testcontainers & Base H2 en mémoire (\texttt{@Profile("test")}) & Exécution rapide sans démon Docker requis en CI. \\
 Mode hors-ligne complet & PWA Angular (\texttt{ngsw-config.json}) pour les assets & Le dépôt de vote nécessite une validation OTP et transactionnelle en ligne. \\
+Horodatage détaillé de chaque vote & Les émargements sont horodatés à l'heure près (\texttt{votedAt} tronqué) et les bulletins n'ont aucune date (\texttt{Ballot} sans \texttt{createdAt}) & Empêcher toute corrélation temporelle entre émargement et bulletin. \\
 \bottomrule
 \end{tabularx}
 \end{table}

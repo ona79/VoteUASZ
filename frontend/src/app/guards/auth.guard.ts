@@ -3,6 +3,17 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { Role } from '../models/vote.models';
 
+export const passwordChangeGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isLoggedIn() && authService.mustChangePassword()) {
+    return router.createUrlTree(['/change-password']);
+  }
+
+  return true;
+};
+
 export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);

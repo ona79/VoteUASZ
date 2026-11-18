@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -162,5 +163,24 @@ class VoteControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Vote Status — retourne hasVoted=false sans auth et délègue à votingService avec auth")
+    void getVoteStatus_returnsExpectedStatus() throws Exception {
+        mockMvc.perform(get("/api/v1/vote/status/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasVoted").value(false));
+    }
+
+    @Test
+    @DisplayName("Vote Status — retourne hasVoted=true pour un électeur authentifié ayant voté")
+    @WithMockUser(username = "ELECT001", roles = "ELECTEUR")
+    void getVoteStatus_authenticated_returnsHasVoted() throws Exception {
+        when(votingService.hasUserVoted("ELECT001", 1L)).thenReturn(true);
+
+        mockMvc.perform(get("/api/v1/vote/status/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasVoted").value(true));
     }
 }

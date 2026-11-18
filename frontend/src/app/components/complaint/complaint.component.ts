@@ -38,12 +38,12 @@ import { PaginationComponent } from '../shared/pagination/pagination.component';
                 class="w-full flex items-center justify-between text-xs font-semibold text-slate-700">
           <span class="inline-flex items-center space-x-2">
             <lucide-icon name="info" class="w-3.5 h-3.5 text-[#047857] shrink-0"></lucide-icon>
-            <span>À savoir — Procédure de réclamation (délai légal 48h ouvrées)</span>
+            <span>À savoir — Procédure de réclamation (délai légal de 48 h après la fin du scrutin)</span>
           </span>
           <lucide-icon [name]="showInfo ? 'chevron-down' : 'chevron-right'" class="w-3.5 h-3.5 text-slate-400"></lucide-icon>
         </button>
         <div *ngIf="showInfo" class="mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-600 grid grid-cols-1 sm:grid-cols-2 gap-1.5 leading-relaxed">
-          <span>• Transmise à la Commission Électorale (traitement sous <strong>48h ouvrées</strong>).</span>
+          <span>• Transmise à la Commission Électorale (traitée dans les meilleurs délais).</span>
           <span>• Soyez précis et joignez toute preuve disponible dans la description.</span>
           <span class="sm:col-span-2 text-amber-700">• Une réclamation abusive ou de mauvaise foi peut entraîner des sanctions.</span>
         </div>

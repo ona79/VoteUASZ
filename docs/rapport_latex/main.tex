@@ -16,6 +16,7 @@
 \usepackage[table]{xcolor}
 \usepackage{booktabs}
 \usepackage{tabularx}
+\usepackage{longtable}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{tcolorbox}
@@ -74,7 +75,7 @@
 % --- Liens hypertextes ---
 \usepackage[colorlinks=true,linkcolor=uaszdark,urlcolor=uaszblue,citecolor=uaszgreen]{hyperref}
 
-\graphicspath{{../../report/figures/}{../../docs/uml/}{images/}}
+\graphicspath{{images/}{../../report/figures/}{../../docs/uml/}}
 
 \begin{document}
 
@@ -146,14 +147,14 @@ J'adresse mes sincères remerciements à mon encadreur, \textbf{Monsieur TOURÉ}
 \chapter*{Résumé et Abstract}
 \addcontentsline{toc}{chapter}{Résumé et Abstract}
 \begin{uaszbox}{Résumé technique}
-\textbf{VoteUASZ} est une application web de vote électronique développée pour les scrutins de l'Université Assane Seck de Ziguinchor (\texttt{DELEGUE}, \texttt{DUFR}, \texttt{VICE\_RECTEUR}). Construite avec \textbf{Spring Boot 3.2.3 (Java 21)}, \textbf{Angular 17} et \textbf{PostgreSQL 16}, elle sépare structurellement l'émargement (\texttt{VoterAuditLog}) du bulletin (\texttt{Ballot}, sans clé étrangère vers \texttt{User}), chiffre le contenu du bulletin en \textbf{AES-256-GCM} (clé dérivée via PBKDF2WithHmacSHA256) et relie les bulletins par une chaîne d'empreintes \textbf{SHA-256} (\texttt{previousHash}). L'accès est protégé par \textbf{JWT HS256} avec \textbf{Refresh Token} rotatif, code \textbf{OTP} par e-mail (Brevo/SMTP), diffusion temps réel \textbf{STOMP} et génération de procès-verbal PDF (\textbf{OpenPDF}). La suite automatisée valide \textbf{122 tests backend} (couverture JaCoCo \textbf{74,30\,\%} en instructions, \textbf{0 violation Checkstyle}) et \textbf{26 tests frontend} (\textbf{0 échec}), pour un bundle initial de \textbf{419,65\,kB}.
+\textbf{VoteUASZ} est une application web de vote électronique développée pour les scrutins de l'Université Assane Seck de Ziguinchor (\texttt{DELEGUE}, \texttt{DUFR}, \texttt{VICE\_RECTEUR}). Construite avec \textbf{Spring Boot 3.2.3 (Java 21)}, \textbf{Angular 17} et \textbf{PostgreSQL 16}, elle sépare structurellement l'émargement (\texttt{VoterAuditLog}) du bulletin (\texttt{Ballot}, sans clé étrangère vers \texttt{User}), chiffre le contenu du bulletin en \textbf{AES-256-GCM} (clé dérivée via PBKDF2WithHmacSHA256) et relie les bulletins par une chaîne d'empreintes \textbf{SHA-256} (\texttt{previousHash}). L'accès est protégé par \textbf{JWT HS256} avec \textbf{Refresh Token} rotatif, code \textbf{OTP} par e-mail (Brevo/SMTP), diffusion temps réel \textbf{STOMP} et génération de procès-verbal PDF (\textbf{OpenPDF}). La suite automatisée valide \textbf{154 tests backend} (couverture JaCoCo \textbf{65,17\,\%} en instructions et \textbf{70,87\,\%} en lignes, \textbf{0 violation Checkstyle}) et \textbf{28 tests frontend} (\textbf{0 échec}), pour un bundle initial de \textbf{430,96\,kB} (\textbf{111,06\,kB} transférés).
 
 \medskip
 \noindent\textbf{Mots-clés :} Vote électronique, Spring Boot, Angular, PostgreSQL, AES-256-GCM, SHA-256, JWT, OTP, WebSocket STOMP, UASZ.
 \end{uaszbox}
 
 \begin{uaszbox}{Abstract}
-\textbf{VoteUASZ} is a secure e-voting web platform designed for Assane Seck University of Ziguinchor elections (\texttt{DELEGUE}, \texttt{DUFR}, \texttt{VICE\_RECTEUR}). Built with \textbf{Spring Boot 3.2.3 (Java 21)}, \textbf{Angular 17}, and \textbf{PostgreSQL 16}, it enforces ballot anonymity by isolating voter attendance (\texttt{VoterAuditLog}) from \textbf{AES-256-GCM} encrypted, \textbf{SHA-256} hash-chained ballots (\texttt{Ballot} without any foreign key to \texttt{User}). Security relies on \textbf{JWT HS256} with rotating \textbf{Refresh Tokens}, email \textbf{OTP}, \textbf{STOMP} live results, and \textbf{OpenPDF} reports. Automated verification passes \textbf{122 backend tests} (74.30\% JaCoCo instruction coverage, 0 Checkstyle violations) and \textbf{26 Angular tests} (0 failures), with a \textbf{419.65\,kB} initial production bundle.
+\textbf{VoteUASZ} is a secure e-voting web platform designed for Assane Seck University of Ziguinchor elections (\texttt{DELEGUE}, \texttt{DUFR}, \texttt{VICE\_RECTEUR}). Built with \textbf{Spring Boot 3.2.3 (Java 21)}, \textbf{Angular 17}, and \textbf{PostgreSQL 16}, it enforces ballot anonymity by isolating voter attendance (\texttt{VoterAuditLog}) from \textbf{AES-256-GCM} encrypted, \textbf{SHA-256} hash-chained ballots (\texttt{Ballot} without any foreign key to \texttt{User}). Security relies on \textbf{JWT HS256} with rotating \textbf{Refresh Tokens}, email \textbf{OTP}, \textbf{STOMP} live results, and \textbf{OpenPDF} reports. Automated verification passes \textbf{154 backend tests} (65.17\% JaCoCo instruction coverage, 70.87\% line coverage, 0 Checkstyle violations) and \textbf{28 Angular tests} (0 failures), with a \textbf{430.96\,kB} initial production bundle (111.06\,kB transfer size).
 
 \medskip
 \noindent\textbf{Keywords:} E-voting, Spring Boot, Angular, PostgreSQL, AES-256-GCM, SHA-256, JWT, OTP, WebSocket STOMP, UASZ.
@@ -208,9 +209,9 @@ Le projet \textbf{VoteUASZ}, conçu et développé individuellement par l'étudi
 
 Ce mémoire s'articule en trois chapitres :
 \begin{itemize}
-    \item Le \textbf{Chapitre 1} présente la gestion du projet, l'analyse des besoins, le contrôle d'accès RBAC et le cycle de vie réel des scrutins.
-    \item Le \textbf{Chapitre 2} détaille la conception logicielle, les diagrammes UML et relationnels générés depuis le code, ainsi que l'analyse honnête des menaces et contre-mesures.
-    \item Le \textbf{Chapitre 3} décrit l'implémentation sécurisée, les interfaces réalisées, les métriques réelles de tests et de qualité, le déploiement cloud et le bilan critique par rapport au cahier des charges.
+    \item Le \hyperref[chap:1]{\textbf{Chapitre 1}} présente la gestion du projet, l'analyse des besoins, le contrôle d'accès RBAC et le cycle de vie réel des scrutins.
+    \item Le \hyperref[chap:2]{\textbf{Chapitre 2}} détaille la conception logicielle, les diagrammes UML et relationnels générés depuis le code, ainsi que l'analyse honnête des menaces et contre-mesures.
+    \item Le \hyperref[chap:3]{\textbf{Chapitre 3}} décrit l'implémentation sécurisée, les interfaces réalisées, les métriques réelles de tests et de qualité, le déploiement cloud et le bilan critique par rapport au cahier des charges.
 \end{itemize}
 
 \input{chapters/chapitre1}

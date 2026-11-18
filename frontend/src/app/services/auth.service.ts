@@ -65,7 +65,16 @@ export class AuthService {
   }
 
   changePassword(currentPassword: string, newPassword: string): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/change-password`, { currentPassword, newPassword });
+    return this.http.post<{ message: string }>(`${this.apiUrl}/change-password`, { currentPassword, newPassword }).pipe(
+      tap(() => {
+        const current = this.currentUser();
+        if (current) {
+          const updated: AuthResponse = { ...current, mustChangePassword: false };
+          localStorage.setItem('voteuasz_user', JSON.stringify(updated));
+          this.currentUser.set(updated);
+        }
+      })
+    );
   }
 
   refreshToken(): Observable<AuthResponse> {
@@ -99,6 +108,10 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return !!this.getToken() && !!this.currentUser();
+  }
+
+  mustChangePassword(): boolean {
+    return !!this.currentUser()?.mustChangePassword;
   }
 
   hasRole(role: Role): boolean {

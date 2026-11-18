@@ -1,4 +1,5 @@
 \chapter{Gestion de Projet, Spécification et Analyse des Besoins}
+\label{chap:1}
 
 \section{Gestion et organisation du projet}
 
@@ -16,7 +17,7 @@ Le projet \textbf{VoteUASZ} a été réalisé par un étudiant unique sous encad
 \textbf{Intervenant} & \textbf{Rôle} & \textbf{Périmètre réel} \\
 \midrule
 Ibrahima DIALLO & Développeur unique (Full-Stack \& DevSecOps) & Conception UML, backend Spring Boot, frontend Angular, tests, Docker, CI/CD et déploiement Render/Vercel. \\
-Monsieur TOURÉ & Encadreur académique & Orientation méthodologique et validation académique (\textit{[À COMPLÉTER PAR L'ÉTUDIANT : fréquence des séances de suivi]}). \\
+Monsieur TOURÉ & Encadreur académique & Orientation méthodologique et validation académique. Une première séance de suivi a été tenue ; une seconde est planifiée. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -27,7 +28,7 @@ L'historique Git et la configuration du dépôt mettent en évidence les pratiqu
     \item \textbf{Gestion de branches} : utilisation des branches principales \texttt{main} et \texttt{develop}, complétées par des branches thématiques (\texttt{feature/corrections-audit}, \texttt{feature/ameliorations-rapport}, \texttt{fix/tests-angular}, \texttt{fix/reset-password-ui}) fusionnées par \textit{Pull Requests}.
     \item \textbf{Intégration continue (CI)} : le workflow \texttt{.github/workflows/ci.yml} exécute automatiquement à chaque \textit{push}/\textit{PR} \texttt{mvn -B verify} (JDK 21) côté backend et \texttt{npx ng build --configuration production} (Node 20) côté frontend.
     \item \textbf{Qualité statique et couverture} : règles Checkstyle (\texttt{backend/checkstyle.xml}) et instrumentation JaCoCo (\texttt{0.8.11}) exécutées dans le cycle Maven.
-    \item \textbf{Pratiques complémentaires} : \textit{[À COMPLÉTER PAR L'ÉTUDIANT : outil de suivi des tâches éventuel (Trello/Jira/GitHub Projects) et rythme des revues avec l'encadreur]}.
+    \item \textbf{Pratiques complémentaires} : Suivi des tâches : le projet étant mené individuellement, l'avancement a été suivi avec l'outil Jira. Les échanges avec l'encadreur ont eu lieu de façon ponctuelle (une séance tenue, une seconde prévue). Les intégrations sur GitHub passent par Pull Requests, validées par la CI.
 \end{itemize}
 
 \subsection{Justification des choix technologiques}
@@ -75,7 +76,7 @@ Hébergement & Render + Vercel & Déploiement continu Docker (backend + PostgreS
 À l'Université Assane Seck de Ziguinchor (UASZ), l'organisation manuelle des élections (délégués de classe, directeurs d'UFR, vice-recteur) engendre des coûts logistiques élevés, un dépouillement manuel lent et l'exclusion de fait des électeurs absents du campus.
 
 \begin{uaszbox}{Recueil des besoins terrain}
-\textit{[À COMPLÉTER PAR L'ÉTUDIANT : décrire ici les entretiens menés (services administratifs, étudiants, membres de commission) et l'observation éventuelle d'un scrutin papier à l'UASZ (dates, personnes interrogées, constats chiffrés).]}
+Aucune enquête formelle n'a été menée dans le cadre de ce projet. L'analyse des besoins repose sur trois sources : (i) le cahier des charges du projet ; (ii) l'observation directe des scrutins organisés dans la promotion de l'étudiant, où la participation dépend de la présence physique des électeurs le jour du vote, certains étudiants étant peu assidus ou absents et donc exclus de fait du scrutin ; (iii) des échanges informels avec un enseignant, Monsieur Khalifa GAY, et avec des camarades de classe sur le déroulement des scrutins actuels. Ces échanges n'ont donné lieu ni à des entretiens structurés ni à des relevés chiffrés, ce qui constitue une limite de l'analyse. Une enquête structurée auprès de l'administration, de la commission électorale et des étudiants est une perspective pour une version ultérieure.
 \end{uaszbox}
 
 \section{Acteurs, contrôle d'accès (RBAC) et types de scrutins}
@@ -94,8 +95,8 @@ L'application définit quatre rôles (\texttt{Role.java}) et trois types de scru
 \midrule
 \texttt{SUPER\_ADMIN} & CRUD élections (en \texttt{CONFIGURATION}), transitions d'état, import CSV des comptes, consultation/export audit, export PV PDF. \\
 \texttt{COMMISSION\_ELECTORALE} & Validation ou rejet motivé des candidatures, traitement des réclamations, consultation/export audit, export PV PDF. \\
-\texttt{CANDIDAT} & Dépôt de candidature, publication unique de campagne (si approuvé), consultation des résultats, réclamations et vote (si éligible). \\
-\texttt{ELECTEUR} & Consultation des scrutins et campagnes, vote sécurisé par OTP e-mail, consultation des résultats dès \texttt{DEPOUILLEMENT}, dépôt de réclamations. \\
+\texttt{CANDIDAT} & Dépôt de candidature, publication unique de campagne (si approuvé), consultation des résultats et export PV PDF (dès \texttt{DEPOUILLEMENT}), réclamations et vote (si éligible). \\
+\texttt{ELECTEUR} & Consultation des scrutins et campagnes, vote sécurisé par OTP e-mail, consultation des résultats et export PV PDF dès \texttt{DEPOUILLEMENT}, dépôt de réclamations. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -117,6 +118,8 @@ L'application définit quatre rôles (\texttt{Role.java}) et trois types de scru
 \end{tabularx}
 \end{table}
 
+\noindent\textbf{Choix de conception :} le scrutin de vice-recteur concerne l'ensemble de la communauté universitaire et est donc ouvert à tous les profils actifs ; le scrutin de DUFR est ouvert à tous les profils rattachés à l'UFR concernée ; le scrutin de délégué est restreint à la promotion (UFR, filière, niveau). Un collège électoral configurable par profil (étudiant, enseignant, personnel) est une perspective d'évolution.
+
 \section{Besoins fonctionnels et non fonctionnels}
 
 \begin{table}[H]
@@ -132,7 +135,7 @@ L'application définit quatre rôles (\texttt{Role.java}) et trois types de scru
 Fonctionnel & BF-01 & Import en masse des électeurs/candidats par CSV sans mot de passe en clair dans le fichier. \\
 Fonctionnel & BF-02 & Gestion des scrutins selon une machine à états stricte et dépôt/validation des candidatures. \\
 Fonctionnel & BF-03 & Vote unique à distance validé par OTP e-mail et jeton temporaire (\texttt{VoteToken}). \\
-Fonctionnel & BF-04 & Dépouillement temps réel (STOMP), export PV PDF (OpenPDF) et gestion des réclamations (48\,h). \\
+Fonctionnel & BF-04 & Dépouillement temps réel (STOMP), export PV PDF (OpenPDF) et gestion des réclamations (48 heures calendaires après \texttt{dateFin}). \\
 Non fonctionnel & BNF-01 & Anonymat structurel du bulletin (\texttt{Ballot} sans clé étrangère vers \texttt{User}). \\
 Non fonctionnel & BNF-02 & Protection contre la force brute (\texttt{RateLimitingFilter}, verrouillage après 5 échecs). \\
 Non fonctionnel & BNF-03 & Interface responsive (desktop et mobile) avec support PWA. \\
@@ -147,6 +150,6 @@ La classe \texttt{ElectionStateMachine.java} impose une progression séquentiell
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.92\textwidth,height=0.48\textheight,keepaspectratio]{state-machine-election.pdf}
-    \caption{Machine à états réelle d'une élection (\texttt{ElectionStateMachine.java})}
+    \caption{Machine à états réelle d'une élection (\texttt{ElectionStateMachine.java}, réclamations autorisées en \texttt{PUBLICATION}/\texttt{CLOTURE} dans les 48 heures calendaires après \texttt{dateFin})}
     \label{fig:state-machine}
 \end{figure}

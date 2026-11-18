@@ -26,4 +26,5 @@ public class LoginResponse {
     private String ufr;
     private String filiere;
     private String niveau;
+    private boolean mustChangePassword;
 }

@@ -15,11 +15,18 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Set;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Set<String> PASSWORD_CHANGE_EXEMPT_URIS = Set.of(
+            "/api/v1/auth/change-password",
+            "/api/v1/auth/logout",
+            "/api/v1/auth/refresh"
+    );
 
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService userDetailsService;
@@ -42,6 +49,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(matricule);
 
                     if (userDetails.isEnabled()) {
+                        if (userDetails instanceof CustomUserDetails cud
+                                && cud.isMustChangePassword()
+                                && !PASSWORD_CHANGE_EXEMPT_URIS.contains(uri)) {
+                            log.warn("[JWT Filter] 403 PASSWORD_CHANGE_REQUIRED pour '{}' sur {} {}", matricule, method, uri);
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write(
+                                    "{\"error\":\"Forbidden\",\"code\":\"PASSWORD_CHANGE_REQUIRED\",\"message\":\"Vous devez modifier votre mot de passe avant de continuer.\"}"
+                            );
+                            return;
+                        }
+
                         UsernamePasswordAuthenticationToken authentication =
                                 new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
