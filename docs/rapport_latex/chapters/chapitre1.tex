@@ -1,0 +1,152 @@
+\chapter{Gestion de Projet, Spécification et Analyse des Besoins}
+
+\section{Gestion et organisation du projet}
+
+\subsection{Organisation des rôles et pratiques de développement}
+Le projet \textbf{VoteUASZ} a été réalisé par un étudiant unique sous encadrement académique. Le tableau~\ref{tab:roles-projet} résume la répartition réelle des responsabilités observée sur le dépôt.
+
+\begin{table}[H]
+\centering
+\caption{Répartition des rôles dans le projet}
+\label{tab:roles-projet}
+\small
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\rowcolor{uaszlight}
+\textbf{Intervenant} & \textbf{Rôle} & \textbf{Périmètre réel} \\
+\midrule
+Ibrahima DIALLO & Développeur unique (Full-Stack \& DevSecOps) & Conception UML, backend Spring Boot, frontend Angular, tests, Docker, CI/CD et déploiement Render/Vercel. \\
+Monsieur TOURÉ & Encadreur académique & Orientation méthodologique et validation académique (\textit{[À COMPLÉTER PAR L'ÉTUDIANT : fréquence des séances de suivi]}). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Workflow Git, intégration continue et qualité}
+L'historique Git et la configuration du dépôt mettent en évidence les pratiques suivantes :
+\begin{itemize}
+    \item \textbf{Gestion de branches} : utilisation des branches principales \texttt{main} et \texttt{develop}, complétées par des branches thématiques (\texttt{feature/corrections-audit}, \texttt{feature/ameliorations-rapport}, \texttt{fix/tests-angular}, \texttt{fix/reset-password-ui}) fusionnées par \textit{Pull Requests}.
+    \item \textbf{Intégration continue (CI)} : le workflow \texttt{.github/workflows/ci.yml} exécute automatiquement à chaque \textit{push}/\textit{PR} \texttt{mvn -B verify} (JDK 21) côté backend et \texttt{npx ng build --configuration production} (Node 20) côté frontend.
+    \item \textbf{Qualité statique et couverture} : règles Checkstyle (\texttt{backend/checkstyle.xml}) et instrumentation JaCoCo (\texttt{0.8.11}) exécutées dans le cycle Maven.
+    \item \textbf{Pratiques complémentaires} : \textit{[À COMPLÉTER PAR L'ÉTUDIANT : outil de suivi des tâches éventuel (Trello/Jira/GitHub Projects) et rythme des revues avec l'encadreur]}.
+\end{itemize}
+
+\subsection{Justification des choix technologiques}
+\begin{table}[H]
+\centering
+\caption{Justification de la stack technique retenue}
+\label{tab:choix-tech}
+\small
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\rowcolor{uaszlight}
+\textbf{Couche} & \textbf{Technologie} & \textbf{Justification} \\
+\midrule
+Backend & Spring Boot 3.2.3 (Java 21) & Écosystème robuste (Spring Security, JPA, STOMP), typage fort et maintenance facilitée par les \texttt{switch} Java 21. \\
+Frontend & Angular 17 + TailwindCSS & Architecture en composants \textit{standalone} avec \textit{lazy loading}, \textit{Guards} de routes et prise en charge PWA native. \\
+Base de données & PostgreSQL 16 & SGBD relationnel ACID adapté aux contraintes d'unicité (\texttt{UNIQUE(user\_id, election\_id)}) et aux UUID natifs. \\
+PDF \& Temps réel & OpenPDF 1.3.30 \& STOMP & Génération programmatique légère sans serveur Jasper externe ; diffusion temps réel sur WebSocket \texttt{/ws}. \\
+Hébergement & Render + Vercel & Déploiement continu Docker (backend + PostgreSQL) et CDN statique avec réécriture \texttt{/api/**} (frontend). \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Planning réel issu de l'historique Git}
+\begin{table}[H]
+\centering
+\caption{Chronologie réelle des jalons de développement (\texttt{git log})}
+\label{tab:planning-git}
+\small
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\rowcolor{uaszlight}
+\textbf{Période} & \textbf{Jalon} & \textbf{Livrables observés dans les commits} \\
+\midrule
+10 sept. 2026 & Socle initial & Code source initial VoteUASZ, sécurité OTP, WebSocket STOMP, export CSV audit. \\
+26--30 sept. 2026 & Durcissement v1 & Corrections sécurité (JWT, CORS, brute-force), gestion des réclamations, optimisations UX. \\
+22 oct. 2026 & Campagne \& statut & Espace candidat (publications de campagne), vérification du statut de vote. \\
+13 nov. 2026 & Lots A--F \& Cloud & Fenêtre de vote, \texttt{RateLimitingFilter}, anonymat UUID/PBKDF2, \texttt{render.yaml}/\texttt{vercel.json}, API Brevo HTTPS. \\
+17--18 nov. 2026 & Finalisation & Refresh tokens, chaînage SHA-256 des bulletins, réinitialisation mot de passe, refonte UI compacte et tests. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Contexte, problématique et recueil des besoins}
+
+À l'Université Assane Seck de Ziguinchor (UASZ), l'organisation manuelle des élections (délégués de classe, directeurs d'UFR, vice-recteur) engendre des coûts logistiques élevés, un dépouillement manuel lent et l'exclusion de fait des électeurs absents du campus.
+
+\begin{uaszbox}{Recueil des besoins terrain}
+\textit{[À COMPLÉTER PAR L'ÉTUDIANT : décrire ici les entretiens menés (services administratifs, étudiants, membres de commission) et l'observation éventuelle d'un scrutin papier à l'UASZ (dates, personnes interrogées, constats chiffrés).]}
+\end{uaszbox}
+
+\section{Acteurs, contrôle d'accès (RBAC) et types de scrutins}
+
+L'application définit quatre rôles (\texttt{Role.java}) et trois types de scrutins (\texttt{TypeElection.java}), avec filtrage d'éligibilité dynamique dans \texttt{EligibilityService.java}.
+
+\begin{table}[H]
+\centering
+\caption{Rôles RBAC et périmètre d'actions (\texttt{Role.java})}
+\label{tab:rbac}
+\small
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\rowcolor{uaszlight}
+\textbf{Rôle} & \textbf{Responsabilités principales} \\
+\midrule
+\texttt{SUPER\_ADMIN} & CRUD élections (en \texttt{CONFIGURATION}), transitions d'état, import CSV des comptes, consultation/export audit, export PV PDF. \\
+\texttt{COMMISSION\_ELECTORALE} & Validation ou rejet motivé des candidatures, traitement des réclamations, consultation/export audit, export PV PDF. \\
+\texttt{CANDIDAT} & Dépôt de candidature, publication unique de campagne (si approuvé), consultation des résultats, réclamations et vote (si éligible). \\
+\texttt{ELECTEUR} & Consultation des scrutins et campagnes, vote sécurisé par OTP e-mail, consultation des résultats dès \texttt{DEPOUILLEMENT}, dépôt de réclamations. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Types de scrutins et règles d'éligibilité (\texttt{EligibilityService.java})}
+\label{tab:types-scrutins}
+\small
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\rowcolor{uaszlight}
+\textbf{Type} & \textbf{Corps électoral} & \textbf{Critères de ciblage} \\
+\midrule
+\texttt{DELEGUE} & \texttt{ETUDIANT} actifs & Correspondance exacte sur \texttt{UFR}, \texttt{Filière} et \texttt{Niveau}. \\
+\texttt{DUFR} & Tous profils actifs & Correspondance sur l'\texttt{UFR} cible. \\
+\texttt{VICE\_RECTEUR} & Tous utilisateurs actifs & Scrutin global sans ciblage restrictif. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Besoins fonctionnels et non fonctionnels}
+
+\begin{table}[H]
+\centering
+\caption{Synthèse des besoins fonctionnels et non fonctionnels}
+\label{tab:besoins}
+\small
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\rowcolor{uaszlight}
+\textbf{Catégorie} & \textbf{Code} & \textbf{Exigence spécifiée} \\
+\midrule
+Fonctionnel & BF-01 & Import en masse des électeurs/candidats par CSV sans mot de passe en clair dans le fichier. \\
+Fonctionnel & BF-02 & Gestion des scrutins selon une machine à états stricte et dépôt/validation des candidatures. \\
+Fonctionnel & BF-03 & Vote unique à distance validé par OTP e-mail et jeton temporaire (\texttt{VoteToken}). \\
+Fonctionnel & BF-04 & Dépouillement temps réel (STOMP), export PV PDF (OpenPDF) et gestion des réclamations (48\,h). \\
+Non fonctionnel & BNF-01 & Anonymat structurel du bulletin (\texttt{Ballot} sans clé étrangère vers \texttt{User}). \\
+Non fonctionnel & BNF-02 & Protection contre la force brute (\texttt{RateLimitingFilter}, verrouillage après 5 échecs). \\
+Non fonctionnel & BNF-03 & Interface responsive (desktop et mobile) avec support PWA. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Cycle de vie réel d'une élection}
+
+La classe \texttt{ElectionStateMachine.java} impose une progression séquentielle stricte à \textbf{6 états} (\texttt{ElectionStatus}). Tout saut d'étape ou retour arrière lève une exception traduite en HTTP \texttt{409 Conflict}. La figure~\ref{fig:state-machine} illustre ce diagramme d'états extrait du code.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\textwidth,height=0.48\textheight,keepaspectratio]{state-machine-election.pdf}
+    \caption{Machine à états réelle d'une élection (\texttt{ElectionStateMachine.java})}
+    \label{fig:state-machine}
+\end{figure}
