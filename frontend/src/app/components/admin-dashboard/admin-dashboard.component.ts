@@ -570,6 +570,10 @@ import { ElectionFilterComponent } from '../shared/election-filter/election-filt
             <p class="text-xs text-slate-500 mt-2 font-medium">Chargement des preuves d'audit cryptographique...</p>
           </div>
 
+          <div *ngIf="!loadingAudit && auditError" class="py-8 text-center">
+            <p class="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl p-4">{{ auditError }}</p>
+          </div>
+
           <div *ngIf="!loadingAudit && auditReport" class="space-y-6">
             <!-- Statistiques d'intégrité -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -878,18 +882,21 @@ export class AdminDashboardComponent implements OnInit {
   selectedElectionForAudit: Election | null = null;
   auditReport: AuditReportDto | null = null;
   loadingAudit = false;
+  auditError = '';
 
   openAuditModal(election: Election): void {
     this.selectedElectionForAudit = election;
     this.loadingAudit = true;
+    this.auditError = '';
     this.electionService.getAuditReport(election.id).subscribe({
       next: (data) => {
         this.auditReport = data;
         this.loadingAudit = false;
       },
-      error: () => {
+      error: (err) => {
         this.loadingAudit = false;
-        this.notificationService.showError("Impossible de charger les preuves d'audit pour ce scrutin.");
+        this.auditError = err.error?.message || "Impossible de charger les preuves d'audit pour ce scrutin.";
+        this.notificationService.showError(this.auditError);
       }
     });
   }
@@ -897,6 +904,7 @@ export class AdminDashboardComponent implements OnInit {
   closeAuditModal(): void {
     this.selectedElectionForAudit = null;
     this.auditReport = null;
+    this.auditError = '';
   }
 
   exportAuditCsv(electionId: number): void {

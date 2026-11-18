@@ -187,7 +187,7 @@ public class VotingService {
         String encryptedPayload = cryptoService.encrypt(votePayload);
         Optional<Ballot> lastBallot = ballotRepository.findTopByElectionIdOrderBySequenceNumberDesc(electionId);
         String previousHash = lastBallot.map(Ballot::getBallotHash).orElse("GENESIS");
-        long nextSequence = lastBallot.map(b -> b.getSequenceNumber() + 1L).orElse(1L);
+        long nextSequence = lastBallot.map(b -> b.getSequenceNumber() != null ? b.getSequenceNumber() + 1L : 1L).orElse(1L);
         String ballotHash = cryptoService.hash(previousHash + "|" + encryptedPayload + "|" + nextSequence);
 
         Ballot ballot = Ballot.builder()

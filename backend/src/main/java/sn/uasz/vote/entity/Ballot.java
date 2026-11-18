@@ -31,9 +31,9 @@ public class Ballot {
     @Column(name = "ballot_hash", nullable = false, unique = true)
     private String ballotHash;
 
-    @Column(name = "previous_hash", nullable = false)
+    @Column(name = "previous_hash")
     private String previousHash;
 
-    @Column(name = "sequence_number", nullable = false)
+    @Column(name = "sequence_number")
     private Long sequenceNumber;
 }
