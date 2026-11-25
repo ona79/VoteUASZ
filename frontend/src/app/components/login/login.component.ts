@@ -1,10 +1,20 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
+
+interface TestAccount {
+  label: string;
+  role: string;
+  matricule: string;
+  password: string;
+  icon: string;
+  badgeClass: string;
+  iconClass: string;
+}
 
 @Component({
   selector: 'app-login',
@@ -266,6 +276,19 @@ import { NotificationService } from '../../services/notification.service';
               <span *ngIf="!loading">Accéder au portail</span>
               <lucide-icon *ngIf="loading" name="loader-2" class="w-4 h-4 animate-spin text-white"></lucide-icon>
             </button>
+
+            <div class="pt-1 flex justify-center">
+              <button type="button"
+                      (click)="toggleTestAccounts()"
+                      [attr.aria-expanded]="showTestAccounts"
+                      class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium
+                             text-slate-600 bg-slate-100 hover:bg-emerald-50 hover:text-[#065f46]
+                             border border-slate-200 hover:border-emerald-200 transition
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857]">
+                <lucide-icon name="users" class="w-3.5 h-3.5 shrink-0"></lucide-icon>
+                <span>Comptes de test</span>
+              </button>
+            </div>
           </form>
 
           <!-- Mode 2 : Mot de passe oublié -->
@@ -389,6 +412,63 @@ import { NotificationService } from '../../services/notification.service';
           </ng-template>
         </div>
       </main>
+
+      <!-- Modale flottante Comptes de test (aucun décalage de mise en page) -->
+      <div *ngIf="showTestAccounts"
+           (click)="closeTestAccounts()"
+           role="dialog"
+           aria-modal="true"
+           aria-labelledby="test-accounts-title"
+           class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px]">
+        <div (click)="$event.stopPropagation()"
+             class="w-full max-w-[380px] rounded-3xl bg-white border border-slate-200 shadow-2xl p-5 form-fade">
+          <div class="flex items-start justify-between gap-3 mb-3.5">
+            <div>
+              <h2 id="test-accounts-title" class="text-base font-bold text-slate-900">
+                Comptes de test
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5">
+                Sélectionnez un profil pour préremplir les identifiants.
+              </p>
+            </div>
+            <button type="button"
+                    (click)="closeTestAccounts()"
+                    aria-label="Fermer"
+                    class="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857]">
+              <lucide-icon name="x" class="w-4 h-4"></lucide-icon>
+            </button>
+          </div>
+
+          <div class="space-y-2">
+            <button *ngFor="let account of testAccounts"
+                    type="button"
+                    (click)="prefillTestAccount(account)"
+                    class="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-2xl
+                           bg-slate-50 hover:bg-emerald-50/70 border border-slate-200 hover:border-emerald-300
+                           text-left transition group
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#047857]">
+              <div class="flex items-center gap-3 min-w-0">
+                <div [class]="account.badgeClass"
+                     class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0">
+                  <lucide-icon [name]="account.icon" [class]="account.iconClass" class="w-4 h-4"></lucide-icon>
+                </div>
+                <div class="min-w-0">
+                  <div class="text-xs font-semibold text-slate-900 group-hover:text-[#065f46] truncate">
+                    {{ account.label }}
+                  </div>
+                  <div class="text-[11px] text-slate-500 font-mono truncate">
+                    {{ account.matricule }}
+                  </div>
+                </div>
+              </div>
+              <span class="text-[11px] font-medium text-[#065f46] opacity-80 group-hover:opacity-100 shrink-0">
+                Préremplir
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   `
 })
@@ -403,6 +483,46 @@ export class LoginComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   isOfflineError = false;
+  showTestAccounts = false;
+
+  readonly testAccounts: TestAccount[] = [
+    {
+      label: 'Super-Admin',
+      role: 'SUPER_ADMIN',
+      matricule: 'ADMIN001',
+      password: 'AdminSecure2026!',
+      icon: 'shield',
+      badgeClass: 'bg-blue-50 border border-blue-200',
+      iconClass: 'text-[#1d4ed8]'
+    },
+    {
+      label: 'Commission Électorale',
+      role: 'COMMISSION_ELECTORALE',
+      matricule: 'COMM001',
+      password: 'CommSecure2026!',
+      icon: 'landmark',
+      badgeClass: 'bg-emerald-50 border border-emerald-200',
+      iconClass: 'text-[#047857]'
+    },
+    {
+      label: 'Candidat',
+      role: 'CANDIDAT',
+      matricule: 'CAND202301',
+      password: 'CandSecure2026!',
+      icon: 'megaphone',
+      badgeClass: 'bg-amber-50 border border-amber-200',
+      iconClass: 'text-amber-700'
+    },
+    {
+      label: 'Électeur (L3 Info)',
+      role: 'ELECTEUR',
+      matricule: '20230001',
+      password: 'ElecteurSecure2026!',
+      icon: 'vote',
+      badgeClass: 'bg-emerald-50 border border-emerald-200',
+      iconClass: 'text-[#047857]'
+    }
+  ];
 
   private authService = inject(AuthService);
   private router = inject(Router);
@@ -421,6 +541,31 @@ export class LoginComponent implements OnInit {
     this.authMode = mode;
     this.errorMessage = '';
     this.successMessage = '';
+    this.showTestAccounts = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (this.showTestAccounts) {
+      this.showTestAccounts = false;
+    }
+  }
+
+  toggleTestAccounts(): void {
+    this.showTestAccounts = !this.showTestAccounts;
+  }
+
+  closeTestAccounts(): void {
+    this.showTestAccounts = false;
+  }
+
+  prefillTestAccount(account: TestAccount): void {
+    this.matricule = account.matricule;
+    this.password = account.password;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.isOfflineError = false;
+    this.showTestAccounts = false;
   }
 
   onSubmit(): void {
