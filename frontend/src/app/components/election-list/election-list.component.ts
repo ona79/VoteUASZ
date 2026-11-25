@@ -136,14 +136,14 @@ import {
                 <span>{{ getStatusLabel(election.statut) }}</span>
               </span>
             </div>
-            <h3 class="text-sm font-bold text-slate-900 leading-snug line-clamp-1" [title]="election.titre">
+            <h2 class="text-sm font-bold text-slate-900 leading-snug line-clamp-1" [title]="election.titre">
               {{ election.titre }}
-            </h3>
+            </h2>
             <p class="text-[11px] text-slate-500 mt-1">{{ getScopeLabel(election) }}</p>
           </div>
 
           <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
-            <span class="text-[11px] text-slate-400 font-medium">
+            <span class="text-[11px] text-slate-600 font-medium">
               {{ election.dateFin ? (election.dateFin | date:'dd/MM/yyyy') : 'Scrutin UASZ' }}
             </span>
             <a [routerLink]="['/elections', election.id]"
