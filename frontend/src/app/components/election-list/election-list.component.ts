@@ -67,10 +67,23 @@ import {
         (viewModeChange)="setViewMode($event)">
       </app-election-toolbar>
 
-      <!-- Loading State -->
-      <div *ngIf="loading" class="py-12 text-center text-slate-500">
-        <lucide-icon name="loader-2" class="w-5 h-5 animate-spin mx-auto text-[#047857] mb-2"></lucide-icon>
-        <p class="text-xs font-medium">Chargement des scrutins...</p>
+      <!-- Loading State (skeleton réservant la hauteur pour éviter tout décalage CLS) -->
+      <div *ngIf="loading" class="min-h-[720px] space-y-2.5" aria-busy="true" aria-label="Chargement des scrutins">
+        <div *ngFor="let s of [1, 2, 3, 4, 5]"
+             class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm h-[140px] flex flex-col justify-between animate-pulse">
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="h-4 w-20 bg-slate-200 rounded"></div>
+              <div class="h-4 w-24 bg-slate-200 rounded"></div>
+            </div>
+            <div class="h-4 w-3/4 bg-slate-200 rounded"></div>
+            <div class="h-3 w-1/3 bg-slate-100 rounded"></div>
+          </div>
+          <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+            <div class="h-3 w-20 bg-slate-100 rounded"></div>
+            <div class="h-6 w-20 bg-slate-200 rounded-lg"></div>
+          </div>
+        </div>
       </div>
 
       <!-- VUE LISTE PAR DÉFAUT (Desktop Table compacte ~38-40px/ligne) -->
