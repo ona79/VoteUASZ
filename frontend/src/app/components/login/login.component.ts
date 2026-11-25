@@ -489,8 +489,8 @@ export class LoginComponent implements OnInit {
     {
       label: 'Super-Admin',
       role: 'SUPER_ADMIN',
-      matricule: 'ADMIN001',
-      password: 'AdminSecure2026!',
+      matricule: 'ADM001',
+      password: 'MonAdmin@2026!',
       icon: 'shield',
       badgeClass: 'bg-blue-50 border border-blue-200',
       iconClass: 'text-[#1d4ed8]'
@@ -498,8 +498,8 @@ export class LoginComponent implements OnInit {
     {
       label: 'Commission Électorale',
       role: 'COMMISSION_ELECTORALE',
-      matricule: 'COMM001',
-      password: 'CommSecure2026!',
+      matricule: 'COMM202601',
+      password: 'Electeur@2026!',
       icon: 'landmark',
       badgeClass: 'bg-emerald-50 border border-emerald-200',
       iconClass: 'text-[#047857]'
@@ -507,8 +507,8 @@ export class LoginComponent implements OnInit {
     {
       label: 'Candidat',
       role: 'CANDIDAT',
-      matricule: 'CAND202301',
-      password: 'CandSecure2026!',
+      matricule: 'CAND202601',
+      password: 'Candidat@2026!',
       icon: 'megaphone',
       badgeClass: 'bg-amber-50 border border-amber-200',
       iconClass: 'text-amber-700'
@@ -516,8 +516,8 @@ export class LoginComponent implements OnInit {
     {
       label: 'Électeur (L3 Info)',
       role: 'ELECTEUR',
-      matricule: '20230001',
-      password: 'ElecteurSecure2026!',
+      matricule: '2026L3I001',
+      password: 'Electeur@2026!',
       icon: 'vote',
       badgeClass: 'bg-emerald-50 border border-emerald-200',
       iconClass: 'text-[#047857]'
