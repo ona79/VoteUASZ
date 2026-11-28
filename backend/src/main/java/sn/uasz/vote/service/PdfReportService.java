@@ -290,9 +290,10 @@ public class PdfReportService {
             ByteArrayOutputStream signedOut = new ByteArrayOutputStream();
             PdfStamper stamper = PdfStamper.createSignature(reader, signedOut, '\0');
             PdfSignatureAppearance appearance = stamper.getSignatureAppearance();
+            appearance.setAcro6Layers(true);
             appearance.setReason("Certification d'intégrité du Procès-Verbal VoteUASZ");
             appearance.setLocation("Université Assane Seck de Ziguinchor (UASZ)");
-            appearance.setVisibleSignature(new Rectangle(36, 32, 260, 62), 1, "VoteUASZ_PV_Sig");
+            appearance.setVisibleSignature(new Rectangle(36, 32, 290, 68), 1, "VoteUASZ_PV_Sig");
             appearance.setCrypto(privateKey, chain, null, PdfSignatureAppearance.SELF_SIGNED);
             stamper.close();
             reader.close();
