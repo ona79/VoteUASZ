@@ -14,6 +14,10 @@ import java.awt.Color;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -254,7 +258,49 @@ public class PdfReportService {
             throw new RuntimeException("Erreur lors de la génération du rapport PDF", e);
         }
 
-        return new ByteArrayInputStream(out.toByteArray());
+        return new ByteArrayInputStream(signPdf(out.toByteArray()));
+    }
+
+    /**
+     * Applique une signature cryptographique PKCS#12 auto-signée (RSA-2048 / SHA-256)
+     * sur le Procès-Verbal PDF afin de garantir l'intégrité du document généré.
+     */
+    byte[] signPdf(byte[] rawPdfBytes) {
+        String keystoreName = "voteuasz-pdf-signing.p12";
+        char[] storePass = System.getenv("PDF_SIGNING_PASSWORD") != null
+                ? System.getenv("PDF_SIGNING_PASSWORD").toCharArray()
+                : "VoteUASZ-PV-Sign-2026".toCharArray();
+        String alias = "voteuasz-pv";
+
+        try (InputStream ksStream = getClass().getClassLoader().getResourceAsStream(keystoreName)) {
+            if (ksStream == null) {
+                log.warn("[PDF] Keystore {} introuvable, export sans signature numérique.", keystoreName);
+                return rawPdfBytes;
+            }
+            KeyStore ks = KeyStore.getInstance("PKCS12");
+            ks.load(ksStream, storePass);
+            PrivateKey privateKey = (PrivateKey) ks.getKey(alias, storePass);
+            Certificate[] chain = ks.getCertificateChain(alias);
+            if (privateKey == null || chain == null || chain.length == 0) {
+                log.warn("[PDF] Clé ou certificat absent dans {}, export sans signature.", keystoreName);
+                return rawPdfBytes;
+            }
+
+            PdfReader reader = new PdfReader(rawPdfBytes);
+            ByteArrayOutputStream signedOut = new ByteArrayOutputStream();
+            PdfStamper stamper = PdfStamper.createSignature(reader, signedOut, '\0');
+            PdfSignatureAppearance appearance = stamper.getSignatureAppearance();
+            appearance.setReason("Certification d'intégrité du Procès-Verbal VoteUASZ");
+            appearance.setLocation("Université Assane Seck de Ziguinchor (UASZ)");
+            appearance.setVisibleSignature(new Rectangle(36, 32, 260, 62), 1, "VoteUASZ_PV_Sig");
+            appearance.setCrypto(privateKey, chain, null, PdfSignatureAppearance.SELF_SIGNED);
+            stamper.close();
+            reader.close();
+            return signedOut.toByteArray();
+        } catch (Exception e) {
+            log.warn("[PDF] Échec de la signature numérique du PV PDF : {}", e.getMessage());
+            return rawPdfBytes;
+        }
     }
 
     /**

@@ -95,6 +95,9 @@ class PdfReportServiceTest {
         ByteArrayInputStream finalPdf = pdfReportService.generateElectionPdfReport(1L);
         byte[] finalBytes = finalPdf.readAllBytes();
         assertTrue(finalBytes.length > 0);
-        assertTrue(new String(finalBytes, 0, 5, StandardCharsets.US_ASCII).startsWith("%PDF-"));
+        String finalContent = new String(finalBytes, StandardCharsets.ISO_8859_1);
+        assertTrue(finalContent.startsWith("%PDF-"));
+        assertTrue(finalContent.contains("/ByteRange"), "Le PDF doit contenir une signature cryptographique /ByteRange");
+        assertTrue(finalContent.contains("VoteUASZ_PV_Sig"), "Le PDF doit contenir le champ de signature VoteUASZ_PV_Sig");
     }
 }
