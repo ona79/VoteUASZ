@@ -89,11 +89,21 @@
             <version>${springdoc.version}</version>
         </dependency>
 
-        <!-- PDF Generation -->
+        <!-- PDF Generation & Cryptographic Signing -->
         <dependency>
             <groupId>com.github.librepdf</groupId>
             <artifactId>openpdf</artifactId>
             <version>${openpdf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.77</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>1.77</version>
         </dependency>
 
         <!-- Utilities -->
